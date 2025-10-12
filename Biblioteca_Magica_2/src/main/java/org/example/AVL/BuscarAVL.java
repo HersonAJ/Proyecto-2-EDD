@@ -77,4 +77,15 @@ class BuscarAVL {
         }
         return a.getIsbn().compareTo(b.getIsbn());
     }
+
+    protected ListaLibros obtenerEnOrdenAlfabetico(NodoAVL raiz) {
+        try {
+            ListaLibros lista = new ListaLibros();
+            recorrerEnOrdenRecursivo(raiz, lista);
+            return lista;
+        } catch (Exception e) {
+            System.err.println("Error en bucarAVL.obtenerLibrosEnOrdenAlfabetico: " + e.getMessage());
+            return new ListaLibros();
+        }
+    }
 }

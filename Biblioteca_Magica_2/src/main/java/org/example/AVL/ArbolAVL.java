@@ -70,4 +70,10 @@ public class ArbolAVL {
     public boolean estaVacio() {
         return raiz == null;
     }
+    public NodoAVL getRaiz() {
+        return raiz;
+    }
+    public ListaLibros obtenerLibrosEnOrdenAlfabetico() {
+        return buscarAVL.obtenerEnOrdenAlfabetico(raiz);
+    }
 }
