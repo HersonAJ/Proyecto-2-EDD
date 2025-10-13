@@ -295,7 +295,7 @@ public class LectorCSV {
 package org.example.Modelos;
 
 import org.example.AVL.ArbolAVL;
-// import org.example.ArbolB.ArbolB;
+import org.example.B.ArbolB;
 // import org.example.ArbolBPlus.ArbolBPlus;
 // import org.example.Indices.IndiceISBN;
 // import org.example.Catalogo.Catalogo;
@@ -309,17 +309,17 @@ import java.util.regex.Pattern;
 public class LectorCSV {
     private String rutaArchivo;
     private ArbolAVL arbol;
-    // private ArbolB arbolB;
+    private ArbolB arbolB;
     // private IndiceISBN indiceISBN;
     // private ArbolBPlus arbolBPlus;
     // private Catalogo catalogoGlobal;
     private java.util.function.BiConsumer<String, String> logger;
 
     // Constructor
-    public LectorCSV(ArbolAVL arbolDestino/*, ArbolB arbolB, IndiceISBN indice, ArbolBPlus arbolBPlus, Catalogo catalogo*/, java.util.function.BiConsumer<String, String> logger) {
+    public LectorCSV(ArbolAVL arbolDestino, ArbolB arbolB/*, IndiceISBN indice, ArbolBPlus arbolBPlus, Catalogo catalogo*/, java.util.function.BiConsumer<String, String> logger) {
         this.rutaArchivo = "";
         this.arbol = arbolDestino;
-        // this.arbolB = arbolB;
+        this.arbolB = arbolB;
         // this.indiceISBN = indice;
         // this.arbolBPlus = arbolBPlus;
         // this.catalogoGlobal = catalogo;
@@ -397,7 +397,7 @@ public class LectorCSV {
                 }
 
                 Libro libroAVL = new Libro(titulo, isbn, genero, fecha, autor);     // Para Árbol AVL
-                // Libro libroB = new Libro(titulo, isbn, genero, fecha, autor);       // Para Árbol B
+                Libro libroB = new Libro(titulo, isbn, genero, fecha, autor);       // Para Árbol B
                 // Libro libroGlobal = new Libro(titulo, isbn, genero, fecha, autor);  // Para IndiceISBN global
                 // Libro libroBPlus = new Libro(titulo, isbn, genero, fecha, autor);   // Para Árbol B+
 
@@ -406,7 +406,7 @@ public class LectorCSV {
 
                 // arbolBPlus.insertarSoloGenero(genero);
                 arbol.insertar(libroAVL);                    // Árbol AVL con su copia
-                // arbolB.insertar(libroB);                     // Árbol B con su copia
+                arbolB.insertar(libroB);                     // Árbol B con su copia
                 // indiceISBN.insertar(libroGlobal.getIsbn(), libroGlobal);  // Global con su copia
                 // catalogoGlobal.agregarLibro(new Libro(titulo, isbn, genero, fecha, autor));//lista para busqueda secuencial
 
@@ -459,13 +459,13 @@ public class LectorCSV {
             // MISMAS 5 COPIAS que en procesarArchivo()
             // Libro libroGlobal = new Libro(titulo, isbn, genero, fecha, autor);
             Libro libroAVL = new Libro(titulo, isbn, genero, fecha, autor);
-            // Libro libroB = new Libro(titulo, isbn, genero, fecha, autor);
+            Libro libroB = new Libro(titulo, isbn, genero, fecha, autor);
             // Libro libroBPlus = new Libro(titulo, isbn, genero, fecha, autor);
             // Libro libroCatalogo = new Libro(titulo, isbn, genero, fecha, autor);
 
             // MISMAS INSERCIONES que en procesarArchivo()
             arbol.insertar(libroAVL);
-            // arbolB.insertar(libroB);
+            arbolB.insertar(libroB);
             // indiceISBN.insertar(isbn, libroGlobal);
             // catalogoGlobal.agregarLibro(libroCatalogo);
 

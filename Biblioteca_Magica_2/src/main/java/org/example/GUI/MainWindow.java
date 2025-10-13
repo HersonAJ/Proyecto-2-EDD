@@ -6,6 +6,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.example.AVL.ArbolAVL;
+import org.example.B.ArbolB;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,6 +24,7 @@ public class MainWindow extends JFrame {
     private Object rendimiento;
     private LectorCSV lector;
     private ArbolAVL arbol;
+    private ArbolB arbolB;
 
     public MainWindow() {
         super("Biblioteca Magica");
@@ -30,7 +32,8 @@ public class MainWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         this.arbol = new ArbolAVL();
-        this.lector = new LectorCSV(arbol, this::appendLog);
+        this.arbolB = new ArbolB();
+        this.lector = new LectorCSV(arbol, arbolB, this::appendLog);
 
         //layout centrañ
         JPanel central = new JPanel(new BorderLayout());
@@ -48,7 +51,7 @@ public class MainWindow extends JFrame {
         avlViewer = new AVLViewer(this.arbol);
         tabs.addTab("AVL" ,avlViewer);
 
-        bViewer = new BViewer(null);
+        bViewer = new BViewer(this.arbolB);
         tabs.addTab("B" ,bViewer);
 
         bPlusViewer = new BPlusViewer(null);
@@ -127,7 +130,7 @@ public class MainWindow extends JFrame {
 
         JMenuItem actionVerB = new JMenuItem("Ver árbol B");
         actionVerB.addActionListener(e -> {
-            // bViewer.actualizarVista();
+            bViewer.actualizarVista();
         });
         menuVisualizacion.add(actionVerB);
 
@@ -172,6 +175,7 @@ public class MainWindow extends JFrame {
                 avlViewer.setArbol(arbol);
                 avlViewer.actualizarVista();
                 listadoAlfabetico.cargarDatosEnTabla();
+                bViewer.actualizarVista();
 
             } catch (Exception e) {
                 appendLog("Error al cargar el archivo: " + e.getMessage(), "error");
