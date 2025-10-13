@@ -7,6 +7,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.example.AVL.ArbolAVL;
 import org.example.B.ArbolB;
+import org.example.AVL_Auxiliar.IndiceISBN;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,6 +26,7 @@ public class MainWindow extends JFrame {
     private LectorCSV lector;
     private ArbolAVL arbol;
     private ArbolB arbolB;
+    private IndiceISBN indiceGlobal;
 
     public MainWindow() {
         super("Biblioteca Magica");
@@ -33,7 +35,8 @@ public class MainWindow extends JFrame {
 
         this.arbol = new ArbolAVL();
         this.arbolB = new ArbolB();
-        this.lector = new LectorCSV(arbol, arbolB, this::appendLog);
+        this.indiceGlobal = new IndiceISBN();
+        this.lector = new LectorCSV(arbol, arbolB, indiceGlobal, this::appendLog);
 
         //layout centrañ
         JPanel central = new JPanel(new BorderLayout());
@@ -191,8 +194,58 @@ public class MainWindow extends JFrame {
     private void onExportarB() {}
     private void onExportarBPlus() {}
     private void onAgregarLibro() {}
-    private void onEliminarLibro() {}
+    private void onEliminarLibro() {
+        if (arbol.estaVacio()) {
+            appendLog("El árbol está vacío. No hay libros para eliminar.", "error");
+            return;
+        }
 
+        String isbn = JOptionPane.showInputDialog(this,
+                "ISBN del libro a eliminar:",
+                "Eliminar libro",
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (isbn == null || isbn.trim().isEmpty()) return;
+
+        String isbnStr = isbn.trim();
+
+        // Búsqueda en el índice global
+        org.example.Modelos.Libro libro = indiceGlobal.buscar(isbnStr);
+        if (libro == null) {
+            appendLog("Libro con ISBN '" + isbnStr + "' no encontrado.", "error");
+            return;
+        }
+
+        // Obtener todos los datos necesarios
+        String titulo = libro.getTitulo();
+        String fecha = libro.getFecha();
+        String genero = libro.getGenero();
+
+        // Eliminar de todas las estructuras
+        arbol.eliminarPorISBN(isbnStr, titulo);      // AVL general
+        arbolB.eliminarPorISBN(isbnStr, fecha);      // Árbol B
+        // arbolBPlus.eliminarPorISBN(isbnStr, genero); // Árbol B+ (comentado hasta que exista)
+        // boolean eliminadoDelCatalogo = catalogoGlobal.eliminarLibroPorISBN(isbnStr); // Catálogo global
+
+        // Eliminar del índice global
+        indiceGlobal.eliminar(isbnStr);
+
+        appendLog("Libro eliminado con ISBN: " + isbnStr, "ok");
+        JOptionPane.showMessageDialog(this,
+                "El libro ha sido eliminado correctamente.",
+                "Eliminado",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        actualizarTodasLasVistas();
+    }
+
+    private void actualizarTodasLasVistas() {
+        // Actualizar todas las vistas visuales
+        avlViewer.actualizarVista();
+        bViewer.actualizarVista();
+        // bPlusViewer.actualizarVista(); // Cuando exista
+        listadoAlfabetico.cargarDatosEnTabla();
+    }
     private void appendLog(String mensaje, String tipo) {
         String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
 
