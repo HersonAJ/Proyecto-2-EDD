@@ -7,6 +7,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.example.AVL.ArbolAVL;
 import org.example.B.ArbolB;
+import org.example.BPlus.ArbolBPlus;
 import org.example.AVL_Auxiliar.IndiceISBN;
 
 import javax.swing.*;
@@ -26,6 +27,7 @@ public class MainWindow extends JFrame {
     private LectorCSV lector;
     private ArbolAVL arbol;
     private ArbolB arbolB;
+    private ArbolBPlus arbolBPlus;
     private IndiceISBN indiceGlobal;
 
     public MainWindow() {
@@ -35,8 +37,9 @@ public class MainWindow extends JFrame {
 
         this.arbol = new ArbolAVL();
         this.arbolB = new ArbolB();
+        this.arbolBPlus = new ArbolBPlus();
         this.indiceGlobal = new IndiceISBN();
-        this.lector = new LectorCSV(arbol, arbolB, indiceGlobal, this::appendLog);
+        this.lector = new LectorCSV(arbol, arbolB, indiceGlobal, arbolBPlus,this::appendLog);
 
         //layout centrañ
         JPanel central = new JPanel(new BorderLayout());
@@ -57,7 +60,7 @@ public class MainWindow extends JFrame {
         bViewer = new BViewer(this.arbolB);
         tabs.addTab("B" ,bViewer);
 
-        bPlusViewer = new BPlusViewer(null);
+        bPlusViewer = new BPlusViewer(this.arbolBPlus);
         tabs.addTab("B+" ,bPlusViewer);
 
         busquedaUniificada = new BusquedaUnificada();
@@ -139,7 +142,7 @@ public class MainWindow extends JFrame {
 
         JMenuItem actionVerBPlus = new JMenuItem("Ver árbol B+");
         actionVerBPlus.addActionListener(e -> {
-            // bPlusViewer.actualizarVista();
+            bPlusViewer.actualizarVista();
         });
         menuVisualizacion.add(actionVerBPlus);
 
@@ -179,6 +182,7 @@ public class MainWindow extends JFrame {
                 avlViewer.actualizarVista();
                 listadoAlfabetico.cargarDatosEnTabla();
                 bViewer.actualizarVista();
+                bPlusViewer.actualizarVista();
 
             } catch (Exception e) {
                 appendLog("Error al cargar el archivo: " + e.getMessage(), "error");
@@ -224,7 +228,7 @@ public class MainWindow extends JFrame {
         // Eliminar de todas las estructuras
         arbol.eliminarPorISBN(isbnStr, titulo);      // AVL general
         arbolB.eliminarPorISBN(isbnStr, fecha);      // Árbol B
-        // arbolBPlus.eliminarPorISBN(isbnStr, genero); // Árbol B+ (comentado hasta que exista)
+        arbolBPlus.eliminarPorISBN(isbnStr, genero); // Árbol B+ (comentado hasta que exista)
         // boolean eliminadoDelCatalogo = catalogoGlobal.eliminarLibroPorISBN(isbnStr); // Catálogo global
 
         // Eliminar del índice global
@@ -243,7 +247,7 @@ public class MainWindow extends JFrame {
         // Actualizar todas las vistas visuales
         avlViewer.actualizarVista();
         bViewer.actualizarVista();
-        // bPlusViewer.actualizarVista(); // Cuando exista
+        bPlusViewer.actualizarVista();
         listadoAlfabetico.cargarDatosEnTabla();
     }
     private void appendLog(String mensaje, String tipo) {

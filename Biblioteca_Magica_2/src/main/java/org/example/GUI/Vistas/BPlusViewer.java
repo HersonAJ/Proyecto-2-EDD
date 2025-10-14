@@ -1,19 +1,22 @@
 package org.example.GUI.Vistas;
 
+import org.example.BPlus.ArbolBPlus;
+import org.example.include.ExportadorDotBPlus;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.io.File;
 
 public class BPlusViewer extends JPanel {
 
-    private Object arbol; // referencia al ArbolBPlus (se definirá después)
+    private ArbolBPlus arbol;
     private JLabel imagenLabel;
     private JScrollPane scrollArea;
-    private Image imagenOriginal;
+    private ImageIcon imagenOriginal;
     private double escala = 1.0;
 
-    public BPlusViewer(Object arbol) {
+    public BPlusViewer(ArbolBPlus arbol) {
         this.arbol = arbol;
 
         setLayout(new BorderLayout());
@@ -35,13 +38,73 @@ public class BPlusViewer extends JPanel {
         });
     }
 
-    // Método para actualizar la vista (vacío por ahora)
     public void actualizarVista() {
 
+        if (arbol == null || arbol.getRaiz() == null) {
+            imagenLabel.setText("El arbol esta vacio");
+            return;
+        }
+
+        String dotFile = "bplus_viewer.dot";
+        String pngFile = "bplus_viewer.png";
+
+        if (!ExportadorDotBPlus.generarArchivo(arbol, dotFile)) {
+            return;
+        }
+
+        try {
+            // Ejecutar comando dot para generar PNG
+            String comando = "dot -Tpng " + dotFile + " -o " + pngFile;
+            Process process = Runtime.getRuntime().exec(comando);
+            int resultado = process.waitFor();
+
+            if (resultado == 0) {
+                // Cargar la imagen PNG
+                ImageIcon icon = new ImageIcon(pngFile);
+                if (icon.getIconWidth() > 0) {
+                    imagenOriginal = icon;
+                    escalarImagen();
+                }
+            }
+
+            // Limpiar archivos temporales
+            new File(dotFile).delete();
+            new File(pngFile).delete();
+
+        } catch (Exception e) {
+            System.err.println("Error al generar imagen B+: " + e.getMessage());
+        }
     }
 
-    // Manejo del zoom con la rueda del ratón
     private void wheelEvent(MouseWheelEvent event) {
+        if (event.isControlDown()) {
+            if (event.getWheelRotation() < 0) {
+                escala *= 1.1; // zoom in
+            } else {
+                escala /= 1.1; // zoom out
+            }
 
+            if (imagenOriginal != null) {
+                escalarImagen();
+            }
+
+            event.consume();
+        }
+    }
+
+    private void escalarImagen() {
+        if (imagenOriginal != null) {
+            Image img = imagenOriginal.getImage();
+            int newWidth = (int) (img.getWidth(null) * escala);
+            int newHeight = (int) (img.getHeight(null) * escala);
+
+            Image scaledImg = img.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+            imagenLabel.setIcon(new ImageIcon(scaledImg));
+        }
+    }
+
+    // Método para cambiar el árbol (si es necesario)
+    public void setArbol(ArbolBPlus arbol) {
+        this.arbol = arbol;
     }
 }

@@ -296,7 +296,7 @@ package org.example.Modelos;
 
 import org.example.AVL.ArbolAVL;
 import org.example.B.ArbolB;
-// import org.example.ArbolBPlus.ArbolBPlus;
+import org.example.BPlus.ArbolBPlus;
 import org.example.AVL_Auxiliar.IndiceISBN;
 // import org.example.Catalogo.Catalogo;
 import java.io.BufferedReader;
@@ -311,17 +311,17 @@ public class LectorCSV {
     private ArbolAVL arbol;
     private ArbolB arbolB;
     private IndiceISBN indiceISBN;
-    // private ArbolBPlus arbolBPlus;
+    private ArbolBPlus arbolBPlus;
     // private Catalogo catalogoGlobal;
     private java.util.function.BiConsumer<String, String> logger;
 
     // Constructor
-    public LectorCSV(ArbolAVL arbolDestino, ArbolB arbolB, IndiceISBN indice/*, ArbolBPlus arbolBPlus, Catalogo catalogo*/, java.util.function.BiConsumer<String, String> logger) {
+    public LectorCSV(ArbolAVL arbolDestino, ArbolB arbolB, IndiceISBN indice, ArbolBPlus arbolBPlus/*, Catalogo catalogo*/, java.util.function.BiConsumer<String, String> logger) {
         this.rutaArchivo = "";
         this.arbol = arbolDestino;
         this.arbolB = arbolB;
         this.indiceISBN = indice;
-        // this.arbolBPlus = arbolBPlus;
+        this.arbolBPlus = arbolBPlus;
         // this.catalogoGlobal = catalogo;
         this.logger = logger;
     }
@@ -343,7 +343,7 @@ public class LectorCSV {
 
             String linea;
             int numLinea = 0;
-            // ListaLibros librosTemporales = new ListaLibros();
+            ListaLibros librosTemporales = new ListaLibros();
 
             while ((linea = archivo.readLine()) != null) {
                 numLinea++;
@@ -399,12 +399,12 @@ public class LectorCSV {
                 Libro libroAVL = new Libro(titulo, isbn, genero, fecha, autor);     // Para Árbol AVL
                 Libro libroB = new Libro(titulo, isbn, genero, fecha, autor);       // Para Árbol B
                 Libro libroGlobal = new Libro(titulo, isbn, genero, fecha, autor);  // Para IndiceISBN global
-                // Libro libroBPlus = new Libro(titulo, isbn, genero, fecha, autor);   // Para Árbol B+
+                Libro libroBPlus = new Libro(titulo, isbn, genero, fecha, autor);   // Para Árbol B+
 
                 // Guardar la copia del B+ en la lista temporal
-                // librosTemporales.insertar(libroBPlus);
+                librosTemporales.insertar(libroBPlus);
 
-                // arbolBPlus.insertarSoloGenero(genero);
+                arbolBPlus.insertarSoloGenero(genero);
                 arbol.insertar(libroAVL);                    // Árbol AVL con su copia
                 arbolB.insertar(libroB);                     // Árbol B con su copia
                 indiceISBN.insertar(libroGlobal.getIsbn(), libroGlobal);  // Global con su copia
@@ -414,11 +414,11 @@ public class LectorCSV {
             }
 
             // Procesar libros temporales para B+
-            // ListaLibros.Iterador iter = librosTemporales.obtenerIterador();
-            // while (iter.tieneSiguiente()) {
-            //     Libro libroBPlus = iter.siguiente();
-            //     arbolBPlus.insertarLibroEnGenero(libroBPlus);
-            // }
+            ListaLibros.Iterador iter = librosTemporales.obtenerIterador();
+             while (iter.tieneSiguiente()) {
+                Libro libroBPlus = iter.siguiente();
+                 arbolBPlus.insertarLibroEnGenero(libroBPlus);
+             }
 
             log("Lectura finalizada", "info");
         } catch (IOException e) {
@@ -460,7 +460,7 @@ public class LectorCSV {
             Libro libroGlobal = new Libro(titulo, isbn, genero, fecha, autor);
             Libro libroAVL = new Libro(titulo, isbn, genero, fecha, autor);
             Libro libroB = new Libro(titulo, isbn, genero, fecha, autor);
-            // Libro libroBPlus = new Libro(titulo, isbn, genero, fecha, autor);
+            Libro libroBPlus = new Libro(titulo, isbn, genero, fecha, autor);
             // Libro libroCatalogo = new Libro(titulo, isbn, genero, fecha, autor);
 
             // MISMAS INSERCIONES que en procesarArchivo()
@@ -470,8 +470,8 @@ public class LectorCSV {
             // catalogoGlobal.agregarLibro(libroCatalogo);
 
             // MISMO PROCESO para Árbol B+
-            // arbolBPlus.insertarSoloGenero(genero);
-            // arbolBPlus.insertarLibroEnGenero(libroBPlus);
+            arbolBPlus.insertarSoloGenero(genero);
+            arbolBPlus.insertarLibroEnGenero(libroBPlus);
 
             log("Libro agregado manualmente: " + titulo + " - ISBN: " + isbn, "ok");
             return true;
