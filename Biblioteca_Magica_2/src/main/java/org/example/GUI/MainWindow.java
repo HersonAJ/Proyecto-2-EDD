@@ -175,38 +175,56 @@ public class MainWindow extends JFrame {
         setJMenuBar(menuBar);
     }
 
-    // Métodos vacíos (se implementarán después)
     private void onCargarArchivo() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new FileNameExtensionFilter("Archivos CSV", "csv"));
 
         int resultado = fileChooser.showOpenDialog(this);
+        if (resultado != JFileChooser.APPROVE_OPTION) return;
 
-        if (resultado == JFileChooser.APPROVE_OPTION) {
-            try {
-                java.io.File archivo = fileChooser.getSelectedFile();
-                String ruta = archivo.getAbsolutePath();
+        java.io.File archivo = fileChooser.getSelectedFile();
+        String ruta = archivo.getAbsolutePath();
 
-                appendLog("Cargando archivo: " + archivo.getName(), "info");
+        appendLog("Cargando archivo: " + archivo.getName(), "info");
 
-                lector.procesarArchivo(ruta);
+        // Deshabilitar menú mientras carga
+        setEnabled(false);
 
-                appendLog("Archivo cargado exitosamente: " + archivo.getName(), "ok");
-
-                avlViewer.setArbol(arbol);
-                avlViewer.actualizarVista();
-                listadoAlfabetico.cargarDatosEnTabla();
-                bViewer.actualizarVista();
-                bPlusViewer.actualizarVista();
-
-            } catch (Exception e) {
-                appendLog("Error al cargar el archivo: " + e.getMessage(), "error");
-                JOptionPane.showMessageDialog(this,
-                        "Error al cargar el archivo:\n" + e.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
+        // Ejecutar en segundo plano
+        SwingWorker<Void, String> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                try {
+                    lector.procesarArchivo(ruta);
+                } catch (Exception e) {
+                    publish("Error al procesar archivo: " + e.getMessage());
+                }
+                return null;
             }
-        }
+
+            @Override
+            protected void process(java.util.List<String> mensajes) {
+                for (String msg : mensajes) appendLog(msg, "info");
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get(); // Propaga excepciones
+                    appendLog("Archivo cargado exitosamente: " + archivo.getName(), "ok");
+                    actualizarTodasLasVistas();
+                } catch (Exception e) {
+                    appendLog("Error al cargar el archivo: " + e.getMessage(), "error");
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                            "Error al cargar el archivo:\n" + e.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    setEnabled(true);
+                }
+            }
+        };
+
+        worker.execute();
     }
 
     private void onExportarAVL() {
@@ -554,34 +572,31 @@ public class MainWindow extends JFrame {
         listadoAlfabetico.cargarDatosEnTabla();
     }
     private void appendLog(String mensaje, String tipo) {
-        String timestamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        SwingUtilities.invokeLater(() -> {
+            try {
+                javax.swing.text.StyledDocument doc = logWidget.getStyledDocument();
 
-        try {
-            javax.swing.text.StyledDocument doc = logWidget.getStyledDocument();
+                javax.swing.text.Style typeStyle = logWidget.addStyle("Type", null);
+                Color color;
+                switch (tipo.toLowerCase()) {
+                    case "ok": color = new Color(0, 128, 0); break;
+                    case "error": color = Color.RED; break;
+                    case "info": color = new Color(0, 0, 192); break;
+                    default: color = Color.BLACK;
+                }
+                javax.swing.text.StyleConstants.setForeground(typeStyle, color);
+                javax.swing.text.StyleConstants.setBold(typeStyle, true);
+                doc.insertString(doc.getLength(),  tipo.toUpperCase() + ": ", typeStyle);
 
-            // Tipo de mensaje con color
-            javax.swing.text.Style typeStyle = logWidget.addStyle("Type", null);
-            Color color;
-            switch (tipo.toLowerCase()) {
-                case "ok": color = new Color(0, 128, 0); break; // Verde oscuro
-                case "error": color = Color.RED; break;
-                case "info": color = new Color(0, 0, 192); break; // Azul
-                default: color = Color.BLACK;
+                javax.swing.text.Style messageStyle = logWidget.addStyle("Message", null);
+                javax.swing.text.StyleConstants.setForeground(messageStyle, Color.BLACK);
+                doc.insertString(doc.getLength(), mensaje + "\n", messageStyle);
+
+                logWidget.setCaretPosition(doc.getLength());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            javax.swing.text.StyleConstants.setForeground(typeStyle, color);
-            javax.swing.text.StyleConstants.setBold(typeStyle, true);
-            doc.insertString(doc.getLength(), tipo.toUpperCase() + ": ", typeStyle);
-
-            // Mensaje normal
-            javax.swing.text.Style messageStyle = logWidget.addStyle("Message", null);
-            javax.swing.text.StyleConstants.setForeground(messageStyle, Color.BLACK);
-            doc.insertString(doc.getLength(), mensaje + "\n", messageStyle);
-
-            // Auto-scroll
-            logWidget.setCaretPosition(doc.getLength());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        });
     }
 
 }
