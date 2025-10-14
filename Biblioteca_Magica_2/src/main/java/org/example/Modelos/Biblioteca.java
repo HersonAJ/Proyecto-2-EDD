@@ -60,6 +60,7 @@ public class Biblioteca {
     public void agregarLibro(Libro libro) {
         arbolTitulos.insertar(libro);
         arbolFechas.insertar(libro);
+        arbolGeneros.insertarSoloGenero(libro.getGenero());
         arbolGeneros.insertarLibroEnGenero(libro);
         catalogo.agregarLibro(libro);
         indiceISBN.insertar(libro.getIsbn(), libro);
