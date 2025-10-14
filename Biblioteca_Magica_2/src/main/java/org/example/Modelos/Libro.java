@@ -9,6 +9,12 @@ public class Libro {
     private String fecha;
     private String autor;
 
+    //nuevos campos
+    /*private String estado;
+    private String idBibliotecaOrigen;
+    private String idBibliotecaDestiono;
+    private String prioridad;*/
+
     //constructor vacio
     public Libro() { this.titulo = ""; this.isbn = ""; this.genero = ""; this.fecha = ""; this.autor = ""; this.cantidad = 1; }
 
