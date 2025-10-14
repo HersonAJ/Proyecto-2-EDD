@@ -30,7 +30,7 @@ public class ArbolBPlus {
         eliminarBPlus.eliminarPorISBN(this, isbn, genero);
     }
 
-    public ListaLibros buscarPorGenera(String genero) {
+    public ListaLibros buscarPorGenero(String genero) {
         return buscarBPlus.buscarPorGenero(this, genero);
     }
 

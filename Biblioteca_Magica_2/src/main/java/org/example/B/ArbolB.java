@@ -13,6 +13,7 @@ public class ArbolB {
         this.raiz = null;
         this.insertarB = new InsertarB();
         this.eliminarB = new EliminarB();
+        this.buscarB = new BuscarB();
     }
 
     public void insertar(Libro libro) {
@@ -77,4 +78,5 @@ public class ArbolB {
         return raiz;
     }
     public void setRaiz(NodoB nuevaRaiz) { this.raiz = nuevaRaiz; }
+
 }

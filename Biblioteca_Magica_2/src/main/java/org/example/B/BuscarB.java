@@ -26,29 +26,28 @@ public class BuscarB {
         try {
             int i = 0;
 
-            // recorrer todas las claves de este nodo
+            // Recorrer todas las claves de este nodo
             while (i < nodo.numClaves) {
-                // Validar que la clave no sea nula
                 if (nodo.claves[i] == null) {
                     throw new RuntimeException("Clave nula encontrada durante búsqueda por rango");
                 }
 
                 int fechaActual = nodo.claves[i].fecha;
 
-                // si la fecha está dentro del rango, procesar todos sus libros
+                // Si no es hoja, visitar el hijo i PRIMERO (claves menores que fechaActual)
+                if (!nodo.esHoja) {
+                    buscarPorRangoRecursivo(nodo.hijos[i], fechaInicio, fechaFin, resultados);
+                }
+
+                // Si la fecha está dentro del rango, procesar todos sus libros
                 if (fechaActual >= fechaInicio && fechaActual <= fechaFin) {
-                    // recorrer el avl interno de isbn de esta fecha y agregarlos a la lista
                     recorrerAVLyAgregarLibros(nodo.claves[i].indiceISBN.getRaiz(), resultados);
                 }
 
-                // si no es hoja podría haber más claves en el rango en el hijo i
-                if (!nodo.esHoja && fechaActual >= fechaInicio) {
-                    buscarPorRangoRecursivo(nodo.hijos[i], fechaInicio, fechaFin, resultados);
-                }
                 i++;
             }
 
-            // último hijo para claves mayores a la última clave de este nodo
+            // Último hijo para claves mayores a la última clave de este nodo
             if (!nodo.esHoja) {
                 buscarPorRangoRecursivo(nodo.hijos[i], fechaInicio, fechaFin, resultados);
             }

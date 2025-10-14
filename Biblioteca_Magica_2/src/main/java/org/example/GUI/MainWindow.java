@@ -9,9 +9,13 @@ import org.example.AVL.ArbolAVL;
 import org.example.B.ArbolB;
 import org.example.BPlus.ArbolBPlus;
 import org.example.AVL_Auxiliar.IndiceISBN;
+import org.example.Catalogo.Catalogo;
+import org.example.GUI.Vistas.PruebaRendimiento;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 public class MainWindow extends JFrame {
 
@@ -23,12 +27,13 @@ public class MainWindow extends JFrame {
     private BViewer bViewer;
     private BPlusViewer bPlusViewer;
     private BusquedaUnificada busquedaUniificada;
-    private Object rendimiento;
+    private PruebaRendimiento rendimiento;
     private LectorCSV lector;
     private ArbolAVL arbol;
     private ArbolB arbolB;
     private ArbolBPlus arbolBPlus;
     private IndiceISBN indiceGlobal;
+    private Catalogo catalogo;
 
     public MainWindow() {
         super("Biblioteca Magica");
@@ -39,7 +44,8 @@ public class MainWindow extends JFrame {
         this.arbolB = new ArbolB();
         this.arbolBPlus = new ArbolBPlus();
         this.indiceGlobal = new IndiceISBN();
-        this.lector = new LectorCSV(arbol, arbolB, indiceGlobal, arbolBPlus,this::appendLog);
+        this.catalogo = new Catalogo();
+        this.lector = new LectorCSV(arbol, arbolB, indiceGlobal, arbolBPlus, catalogo, this::appendLog);
 
         //layout centrañ
         JPanel central = new JPanel(new BorderLayout());
@@ -63,8 +69,17 @@ public class MainWindow extends JFrame {
         bPlusViewer = new BPlusViewer(this.arbolBPlus);
         tabs.addTab("B+" ,bPlusViewer);
 
-        busquedaUniificada = new BusquedaUnificada();
+        busquedaUniificada = new BusquedaUnificada(
+                this.arbol,           // ArbolAVL arbolTitulos
+                this.indiceGlobal,    // IndiceISBN indiceISBN
+                this.arbolB,          // ArbolB arbolB
+                this.arbolBPlus,      // ArbolBPlus arbolBPlus
+                this::appendLog       // BiConsumer<String, String> logCallBack
+        );
         tabs.addTab("Busqueda" ,busquedaUniificada);
+
+        rendimiento = new PruebaRendimiento(this.arbol, this.indiceGlobal, this.catalogo);
+        tabs.addTab("Rendimiento" ,rendimiento);
 
         central.add(tabs, BorderLayout.CENTER);
         setContentPane(central);
@@ -194,10 +209,298 @@ public class MainWindow extends JFrame {
         }
     }
 
-    private void onExportarAVL() {}
-    private void onExportarB() {}
-    private void onExportarBPlus() {}
-    private void onAgregarLibro() {}
+    private void onExportarAVL() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar imagen del árbol AVL");
+
+        // Filtros para SVG y PNG
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "Imagen SVG (*.svg)", "svg"));
+        fileChooser.addChoosableFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "Imagen PNG (*.png)", "png"));
+
+        int resultado = fileChooser.showSaveDialog(this);
+
+        if (resultado != JFileChooser.APPROVE_OPTION) return;
+
+        java.io.File archivo = fileChooser.getSelectedFile();
+        String ruta = archivo.getAbsolutePath();
+
+        // Nombre único con timestamp para evitar solapamientos
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String dotFile = "arbol_export_" + timestamp + ".dot";
+
+        // Determinar formato basado en extensión del archivo
+        String formato = ruta.toLowerCase().endsWith(".svg") ? "svg" : "png";
+
+        // Asegurar extensión correcta
+        if (!ruta.toLowerCase().endsWith("." + formato)) {
+            ruta += "." + formato;
+        }
+
+        // Generar DOT del AVL (necesitas implementar este método en ArbolAVL)
+        arbol.guardarComoDOT(dotFile);
+
+        try {
+            // Ejecutar comando dot
+            String comando = "dot -T" + formato + " " + dotFile + " -o " + ruta ;
+            Process process = Runtime.getRuntime().exec(comando);
+            int exitCode = process.waitFor();
+
+
+            // Limpiar archivo temporal DOT
+            new java.io.File(dotFile).delete();
+
+            if (exitCode == 0) {
+                appendLog("Árbol AVL exportado: " + ruta + " (" + formato + ")", "ok");
+                JOptionPane.showMessageDialog(this,
+                        "Árbol AVL exportado correctamente.",
+                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                appendLog("Error al generar la imagen del árbol AVL.", "error");
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo generar la imagen. Verifica que Graphviz esté instalado.",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (Exception e) {
+            appendLog("Error al exportar árbol AVL: " + e.getMessage(), "error");
+            JOptionPane.showMessageDialog(this,
+                    "Error al exportar: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void onExportarB() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar imagen del Árbol B");
+
+        // Filtros para SVG y PNG
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "Imagen SVG (*.svg)", "svg"));
+        fileChooser.addChoosableFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "Imagen PNG (*.png)", "png"));
+
+        int resultado = fileChooser.showSaveDialog(this);
+
+        if (resultado != JFileChooser.APPROVE_OPTION) return;
+
+        java.io.File archivo = fileChooser.getSelectedFile();
+        String ruta = archivo.getAbsolutePath();
+
+        // Nombre único con timestamp para evitar solapamientos
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String dotFile = "arbolB_export_" + timestamp + ".dot";
+
+        // Determinar formato basado en extensión del archivo
+        String formato = ruta.toLowerCase().endsWith(".svg") ? "svg" : "png";
+
+        // Asegurar extensión correcta
+        if (!ruta.toLowerCase().endsWith("." + formato)) {
+            ruta += "." + formato;
+        }
+
+        // Generar DOT del Árbol B
+        if (!org.example.include.ExportadorDotB.generarArchivo(arbolB, dotFile)) {
+            appendLog("Error al generar archivo DOT del Árbol B.", "error");
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo generar el archivo DOT.",
+                    "Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            // Ejecutar comando dot
+            String comando = "dot -T" + formato + " " + dotFile + " -o " + ruta;
+            Process process = Runtime.getRuntime().exec(comando);
+            int exitCode = process.waitFor();
+
+            // Limpiar archivo temporal DOT
+            new java.io.File(dotFile).delete();
+
+            if (exitCode == 0) {
+                appendLog("Árbol B exportado: " + ruta + " (" + formato + ")", "ok");
+                JOptionPane.showMessageDialog(this,
+                        "Árbol B exportado correctamente.",
+                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                appendLog("Error al generar la imagen del Árbol B.", "error");
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo generar la imagen. Verifica que Graphviz esté instalado.",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (Exception e) {
+            appendLog("Error al exportar árbol B: " + e.getMessage(), "error");
+            JOptionPane.showMessageDialog(this,
+                    "Error al exportar: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void onExportarBPlus() {
+        if (arbolBPlus.getRaiz() == null) {
+            appendLog("El árbol B+ está vacío. No hay nada que exportar.", "error");
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar imagen del Árbol B+");
+
+        // Filtros para SVG y PNG
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "Imagen SVG (*.svg)", "svg"));
+        fileChooser.addChoosableFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "Imagen PNG (*.png)", "png"));
+
+        int resultado = fileChooser.showSaveDialog(this);
+
+        if (resultado != JFileChooser.APPROVE_OPTION) return;
+
+        java.io.File archivo = fileChooser.getSelectedFile();
+        String ruta = archivo.getAbsolutePath();
+
+        // Nombre único con timestamp para evitar solapamientos
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String dotFile = "arbolBPlus_export_" + timestamp + ".dot";
+
+        // Determinar formato basado en extensión del archivo
+        String formato = ruta.toLowerCase().endsWith(".svg") ? "svg" : "png";
+
+        // Asegurar extensión correcta
+        if (!ruta.toLowerCase().endsWith("." + formato)) {
+            ruta += "." + formato;
+        }
+
+        // Generar DOT del Árbol B+
+        if (!org.example.include.ExportadorDotBPlus.generarArchivo(arbolBPlus, dotFile)) {
+            appendLog("Error al generar archivo DOT del Árbol B+.", "error");
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo generar el archivo DOT.",
+                    "Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            // Ejecutar comando dot
+            String comando = "dot -T" + formato + " " + dotFile + " -o " + ruta;
+            Process process = Runtime.getRuntime().exec(comando);
+            int exitCode = process.waitFor();
+
+            // Limpiar archivo temporal DOT
+            new java.io.File(dotFile).delete();
+
+            if (exitCode == 0) {
+                appendLog("Árbol B+ exportado: " + ruta + " (" + formato + ")", "ok");
+                JOptionPane.showMessageDialog(this,
+                        "Árbol B+ exportado correctamente.",
+                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                appendLog("Error al generar la imagen del Árbol B+.", "error");
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo generar la imagen. Verifica que Graphviz esté instalado.",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (Exception e) {
+            appendLog("Error al exportar árbol B+: " + e.getMessage(), "error");
+            JOptionPane.showMessageDialog(this,
+                    "Error al exportar: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void onAgregarLibro() {
+        // Diálogo personalizado para ingresar datos del libro
+        JDialog dialog = new JDialog(this, "Agregar Nuevo Libro", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(this);
+
+        // Panel de formulario
+        JPanel panelForm = new JPanel(new GridLayout(5, 2, 5, 5));
+        panelForm.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Campos de entrada
+        JTextField editTitulo = new JTextField();
+        JTextField editISBN = new JTextField();
+        JTextField editGenero = new JTextField();
+        JTextField editFecha = new JTextField();
+        JTextField editAutor = new JTextField();
+
+        // Agregar campos al formulario
+        panelForm.add(new JLabel("Título:"));
+        panelForm.add(editTitulo);
+        panelForm.add(new JLabel("ISBN:"));
+        panelForm.add(editISBN);
+        panelForm.add(new JLabel("Género:"));
+        panelForm.add(editGenero);
+        panelForm.add(new JLabel("Fecha (año):"));
+        panelForm.add(editFecha);
+        panelForm.add(new JLabel("Autor:"));
+        panelForm.add(editAutor);
+
+        dialog.add(panelForm, BorderLayout.CENTER);
+
+        // Panel de botones
+        JPanel panelBotones = new JPanel(new FlowLayout());
+        JButton btnAceptar = new JButton("Aceptar");
+        JButton btnCancelar = new JButton("Cancelar");
+
+        btnAceptar.addActionListener(e -> {
+            // Obtener datos
+            String titulo = editTitulo.getText().trim();
+            String isbn = editISBN.getText().trim();
+            String genero = editGenero.getText().trim();
+            String fecha = editFecha.getText().trim();
+            String autor = editAutor.getText().trim();
+
+            // Validaciones
+            if (titulo.isEmpty() || isbn.isEmpty() || genero.isEmpty() || fecha.isEmpty() || autor.isEmpty()) {
+                appendLog("Error: Todos los campos son obligatorios", "error");
+                JOptionPane.showMessageDialog(dialog,
+                        "Todos los campos son obligatorios.",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Validar que la fecha sea numérica
+            try {
+                Integer.parseInt(fecha);
+            } catch (NumberFormatException ex) {
+                appendLog("Error: La fecha debe ser un año válido", "error");
+                JOptionPane.showMessageDialog(dialog,
+                        "La fecha debe ser un año válido (ej: 2023).",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Usar el LectorCSV para agregar el libro
+            boolean exito = lector.agregarLibroIndividual(titulo, isbn, genero, fecha, autor);
+
+            if (exito) {
+                // Actualizar vistas
+                actualizarTodasLasVistas();
+
+                appendLog("Libro agregado manualmente: " + titulo + " - ISBN: " + isbn, "ok");
+                JOptionPane.showMessageDialog(dialog,
+                        "Libro agregado correctamente al sistema.",
+                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                dialog.dispose();
+            } else {
+                appendLog("Error al agregar libro manualmente: " + titulo, "error");
+                JOptionPane.showMessageDialog(dialog,
+                        "No se pudo agregar el libro. Verifique que el ISBN no exista y los datos sean válidos.",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
+        btnCancelar.addActionListener(e -> dialog.dispose());
+
+        panelBotones.add(btnAceptar);
+        panelBotones.add(btnCancelar);
+        dialog.add(panelBotones, BorderLayout.SOUTH);
+
+        // Mostrar diálogo
+        dialog.setVisible(true);
+    }
     private void onEliminarLibro() {
         if (arbol.estaVacio()) {
             appendLog("El árbol está vacío. No hay libros para eliminar.", "error");
@@ -229,7 +532,7 @@ public class MainWindow extends JFrame {
         arbol.eliminarPorISBN(isbnStr, titulo);      // AVL general
         arbolB.eliminarPorISBN(isbnStr, fecha);      // Árbol B
         arbolBPlus.eliminarPorISBN(isbnStr, genero); // Árbol B+ (comentado hasta que exista)
-        // boolean eliminadoDelCatalogo = catalogoGlobal.eliminarLibroPorISBN(isbnStr); // Catálogo global
+        boolean eliminadoDelCatalogo = catalogo.eliminarLibroPorISBN(isbnStr); // Catálogo global
 
         // Eliminar del índice global
         indiceGlobal.eliminar(isbnStr);
@@ -282,5 +585,3 @@ public class MainWindow extends JFrame {
     }
 
 }
-
-

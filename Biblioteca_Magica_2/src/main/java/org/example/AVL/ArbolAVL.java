@@ -76,4 +76,16 @@ public class ArbolAVL {
     public ListaLibros obtenerLibrosEnOrdenAlfabetico() {
         return buscarAVL.obtenerEnOrdenAlfabetico(raiz);
     }
+    public void guardarComoDOT(String ruta) {
+        try {
+            if (ruta == null || ruta.isEmpty())
+                throw new IllegalArgumentException("Ruta vacía para exportar DOT");
+
+            org.example.include.ExportadorDOT exportador = new org.example.include.ExportadorDOT(raiz, ruta);
+            exportador.exportar();
+        } catch (Exception e) {
+            System.err.println("Error en ArbolAVL::guardarComoDOT: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
 }
