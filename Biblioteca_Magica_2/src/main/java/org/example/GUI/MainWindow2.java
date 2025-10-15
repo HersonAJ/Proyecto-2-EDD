@@ -20,10 +20,9 @@ public class MainWindow2 extends JFrame {
     private GrafoBibliotecas grafo;
     private JTabbedPane tabs;
     private JTextPane logWidget;
-    private ConexionManual conexionManual;
+    private BibliotecaWindow bibliotecaWindow;
 
-    // Para compatibilidad temporal con el sistema actual
-    private LectorCSV lectorLibros;
+    private LectorCSV lectorLibros;//cambiar al nuevo global
 
     public MainWindow2() {
         super("Sistema de Red de Bibliotecas Mágicas");
@@ -48,6 +47,9 @@ public class MainWindow2 extends JFrame {
         // Panel de información del grafo
         JPanel panelInfo = crearPanelInformacion();
         tabs.addTab("Información de la Red", panelInfo);
+
+        JPanel panelBibliotecaIndividual = crearPanelBibliotecaIndividual();
+        tabs.addTab("Biblioteca Individual", panelBibliotecaIndividual);
 
         setContentPane(tabs);
     }
@@ -81,6 +83,64 @@ public class MainWindow2 extends JFrame {
 
         return panel;
     }
+    private JPanel crearPanelBibliotecaIndividual() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // === Panel superior: selector de biblioteca ===
+        JPanel panelSelector = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        JLabel lblSeleccion = new JLabel("Seleccione una biblioteca:");
+        JComboBox<String> cmbBibliotecas = new JComboBox<>();
+
+        // Cargar bibliotecas existentes (si las hay)
+        actualizarComboBibliotecas(cmbBibliotecas);
+
+        JButton btnCargar = new JButton("Cargar Biblioteca");
+        btnCargar.addActionListener(e -> {
+            String seleccion = (String) cmbBibliotecas.getSelectedItem();
+            if (seleccion == null) {
+                JOptionPane.showMessageDialog(this,
+                        "No hay bibliotecas disponibles o ninguna seleccionada.",
+                        "Atención", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String idBiblioteca = seleccion.split(" - ")[0];
+            Biblioteca biblioteca = grafo.getBiblioteca(idBiblioteca);
+
+            if (biblioteca != null) {
+                // Crear y mostrar la biblioteca seleccionada
+                bibliotecaWindow = new BibliotecaWindow(biblioteca);
+
+                panel.removeAll();
+                panel.add(panelSelector, BorderLayout.NORTH);
+                panel.add(bibliotecaWindow, BorderLayout.CENTER);
+
+                panel.revalidate();
+                panel.repaint();
+
+                appendLog("Biblioteca cargada: " + biblioteca.getNombre(), "ok");
+            }
+        });
+
+        panelSelector.add(lblSeleccion);
+        panelSelector.add(cmbBibliotecas);
+        panelSelector.add(btnCargar);
+
+        panel.add(panelSelector, BorderLayout.NORTH);
+
+        // === Mensaje inicial ===
+        JTextArea mensajeInicial = new JTextArea(
+                "Seleccione una biblioteca para visualizar.\n\n" +
+                        "Aquí podrá explorar la información, libros y estadísticas de cada biblioteca.");
+        mensajeInicial.setEditable(false);
+        mensajeInicial.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        panel.add(mensajeInicial, BorderLayout.CENTER);
+
+        return panel;
+    }
+
 
     private void createMenu() {
         JMenuBar menuBar = new JMenuBar();
@@ -218,23 +278,18 @@ public class MainWindow2 extends JFrame {
 
     // Métodos para gestión manual
     private void agregarBibliotecaManual() {
-        AgregarBibliotecaManual dialog = new AgregarBibliotecaManual(
-                this,
-                grafo,
-                () -> {
+        AgregarBibliotecaManual dialog = new AgregarBibliotecaManual(this, grafo, () -> {
                     appendLog("Biblioteca agregada manualmente", "ok");
                     actualizarVista();
                 }
         );
         dialog.setVisible(true);
+        actualizarComboBibliotecas(buscarComboBibliotecas());
     }
 
 
     private void agregarConexionManual() {
-        ConexionManual dialog = new ConexionManual(
-                this,
-                grafo,
-                () -> {
+        ConexionManual dialog = new ConexionManual(this, grafo, () -> {
                     appendLog("Conexión agregada manualmente", "ok");
                     actualizarVista();
                 }
@@ -250,10 +305,7 @@ public class MainWindow2 extends JFrame {
             return;
         }
 
-        AgregarLibroManual dialog = new AgregarLibroManual(
-                this,
-                grafo,
-                () -> {
+        AgregarLibroManual dialog = new AgregarLibroManual(this, grafo, () -> {
                     appendLog("Libro agregado manualmente a la biblioteca seleccionada", "ok");
                 }
         );
@@ -326,4 +378,30 @@ public class MainWindow2 extends JFrame {
             }
         });
     }
+
+    private void actualizarComboBibliotecas(JComboBox<String> combo) {
+        combo.removeAllItems();
+        if (grafo.getBibliotecas().isEmpty()) {
+            combo.addItem("(No hay bibliotecas disponibles)");
+            combo.setEnabled(false);
+            return;
+        }
+        combo.setEnabled(true);
+        for (String id : grafo.getBibliotecas().keySet()) {
+            Biblioteca bib = grafo.getBiblioteca(id);
+            combo.addItem(id + " - " + bib.getNombre() + " (" + bib.getUbicacion() + ")");
+        }
+    }
+
+    private JComboBox<String> buscarComboBibliotecas() {
+        try {
+            JPanel panel = (JPanel) tabs.getComponentAt(2);
+            JPanel panelSelector = (JPanel) ((BorderLayout) panel.getLayout()).getLayoutComponent(BorderLayout.NORTH);
+            for (Component c : panelSelector.getComponents()) {
+                if (c instanceof JComboBox<?>) return (JComboBox<String>) c;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
 }
