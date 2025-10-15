@@ -8,6 +8,8 @@ import org.example.Modelos.LectorCSV;
 import org.example.GUI.VistasGrafo.ConexionManual;
 import org.example.GUI.VistasGrafo.AgregarBibliotecaManual;
 import org.example.GUI.VistasGrafo.AgregarLibroManual;
+import org.example.GUI.VistasGrafo.CargarCSVBibliotecaDialog;
+import org.example.Modelos.LectorCSVBiblioteca;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -198,41 +200,21 @@ public class MainWindow2 extends JFrame {
 
     // Métodos para cargar archivos CSV
     private void cargarCSVBibliotecas() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Archivos CSV", "csv"));
-
-        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                int contador = 0;
-                BufferedReader br = new BufferedReader(new FileReader(fileChooser.getSelectedFile()));
-                String linea;
-
-                // Saltar header
-                br.readLine();
-
-                while ((linea = br.readLine()) != null) {
-                    String[] datos = linea.split(",");
-                    if (datos.length >= 6) {
-                        String id = datos[0].replace("\"", "").trim();
-                        String nombre = datos[1].replace("\"", "").trim();
-                        String ubicacion = datos[2].replace("\"", "").trim();
-                        int tIngreso = Integer.parseInt(datos[3].trim());
-                        int tTraspaso = Integer.parseInt(datos[4].trim());
-                        int intervalo = Integer.parseInt(datos[5].trim());
-
-                        grafo.agregarBiblioteca(id, nombre, ubicacion, tIngreso, tTraspaso, intervalo);
-                        contador++;
-                    }
-                }
-                br.close();
-
-                appendLog("Cargadas " + contador + " bibliotecas desde CSV", "ok");
-                actualizarVista();
-
-            } catch (Exception e) {
-                appendLog("Error cargando bibliotecas: " + e.getMessage(), "error");
+        // Crear el callback para el progreso en tiempo real
+        LectorCSVBiblioteca.ProgresoCallback progresoCallback = new LectorCSVBiblioteca.ProgresoCallback() {
+            @Override
+            public void reportarLinea(String mensaje, String tipo) {
+                appendLog(mensaje, tipo);
             }
-        }
+        };
+
+        CargarCSVBibliotecaDialog dialog = new CargarCSVBibliotecaDialog(this, grafo, () -> {
+            appendLog("Proceso de carga de CSV completado", "info");
+            actualizarVista();
+            actualizarComboBibliotecas(buscarComboBibliotecas());
+        }, progresoCallback);
+
+        dialog.setVisible(true);
     }
 
     private void cargarCSVConexiones() {

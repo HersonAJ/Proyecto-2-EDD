@@ -11,10 +11,17 @@ public class GrafoBibliotecas {
     }
 
     // Métodos para gestionar bibliotecas
-    public void agregarBiblioteca(String id, String nombre, String ubicacion,
-                                  int tiempoIngreso, int tiempoTraspaso, int intervaloDespacho) {
+    public boolean agregarBiblioteca(String id, String nombre, String ubicacion,
+                                     int tiempoIngreso, int tiempoTraspaso, int intervaloDespacho) {
+
+        // Validar si ya existe
+        if (existeBiblioteca(id)) {
+            return false; // No se agregó porque ya existe
+        }
+
         Biblioteca biblioteca = new Biblioteca(id, nombre, ubicacion, tiempoIngreso, tiempoTraspaso, intervaloDespacho);
         vertices.put(id, new Vertice(biblioteca));
+        return true; // Se agregó exitosamente
     }
 
     public Biblioteca getBiblioteca(String id) {
