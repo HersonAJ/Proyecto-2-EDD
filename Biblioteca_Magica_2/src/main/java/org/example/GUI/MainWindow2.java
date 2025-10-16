@@ -10,6 +10,8 @@ import org.example.GUI.VistasGrafo.AgregarBibliotecaManual;
 import org.example.GUI.VistasGrafo.AgregarLibroManual;
 import org.example.GUI.VistasGrafo.CargarCSVBibliotecaDialog;
 import org.example.Modelos.LectorCSVBiblioteca;
+import org.example.Modelos.LectorCSVConexiones;
+import org.example.GUI.VistasGrafo.CargarCSVConexionesDialog;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -218,39 +220,20 @@ public class MainWindow2 extends JFrame {
     }
 
     private void cargarCSVConexiones() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Archivos CSV", "csv"));
-
-        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                int contador = 0;
-                BufferedReader br = new BufferedReader(new FileReader(fileChooser.getSelectedFile()));
-                String linea;
-
-                // Saltar header
-                br.readLine();
-
-                while ((linea = br.readLine()) != null) {
-                    String[] datos = linea.split(",");
-                    if (datos.length >= 4) {
-                        String origen = datos[0].replace("\"", "").trim();
-                        String destino = datos[1].replace("\"", "").trim();
-                        int tiempo = Integer.parseInt(datos[2].trim());
-                        double costo = Double.parseDouble(datos[3].trim());
-
-                        grafo.conectarBibliotecas(origen, destino, tiempo, costo);
-                        contador++;
-                    }
-                }
-                br.close();
-
-                appendLog("Cargadas " + contador + " conexiones desde CSV", "ok");
-                actualizarVista();
-
-            } catch (Exception e) {
-                appendLog("Error cargando conexiones: " + e.getMessage(), "error");
+        // Crear el callback para el progreso en tiempo real
+        LectorCSVConexiones.ProgresoCallback progresoCallback = new LectorCSVConexiones.ProgresoCallback() {
+            @Override
+            public void reportarLinea(String mensaje, String tipo) {
+                appendLog(mensaje, tipo);
             }
-        }
+        };
+
+        CargarCSVConexionesDialog dialog = new CargarCSVConexionesDialog(this, grafo, () -> {
+            appendLog("Proceso de carga de conexiones CSV completado", "info");
+            actualizarVista();
+        }, progresoCallback);
+
+        dialog.setVisible(true);
     }
 
     private void cargarCSVLibros() {

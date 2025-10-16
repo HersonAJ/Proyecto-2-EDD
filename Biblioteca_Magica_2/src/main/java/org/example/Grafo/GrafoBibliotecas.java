@@ -42,14 +42,21 @@ public class GrafoBibliotecas {
     }
 
     // Métodos para gestionar conexiones
-    public void conectarBibliotecas(String idOrigen, String idDestino, int tiempo, double costo) {
-        Vertice origen = vertices.get(idOrigen);
-        Vertice destino = vertices.get(idDestino);
-
-        if (origen != null && destino != null) {
-            Arista arista = new Arista(idOrigen, idDestino, tiempo, costo);
-            origen.agregarConexion(arista);
+    public boolean conectarBibliotecas(String idOrigen, String idDestino, int tiempo, double costo) {
+        // Validar que existan ambos vértices
+        if (!existeBiblioteca(idOrigen) || !existeBiblioteca(idDestino)) {
+            return false;
         }
+
+        // Validar que no exista ya la conexión
+        if (estanConectadas(idOrigen, idDestino)) {
+            return false;
+        }
+
+        Vertice origen = vertices.get(idOrigen);
+        Arista arista = new Arista(idOrigen, idDestino, tiempo, costo);
+        origen.agregarConexion(arista);
+        return true;
     }
 
     public List<Arista> getTodasLasAristas() {
