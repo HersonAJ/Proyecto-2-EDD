@@ -1,6 +1,10 @@
 package org.example.GUI.VistasGrafo;
 
 import org.example.Grafo.GrafoBibliotecas;
+import org.example.Modelos.Biblioteca;
+import org.example.TablaHash.Iterador;
+import org.example.TablaHash.TablaHash;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -62,7 +66,10 @@ public class ConexionManual extends JDialog {
         cmbOrigen.removeAllItems();
         cmbDestino.removeAllItems();
 
-        for (String id : grafo.getBibliotecas().keySet()) {
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        Iterador<String> iterador = bibliotecas.iteradorClaves();
+        while (iterador.tieneSiguiente()) {
+            String id = iterador.siguiente();
             cmbOrigen.addItem(id);
             cmbDestino.addItem(id);
         }

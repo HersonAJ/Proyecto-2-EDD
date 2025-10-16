@@ -24,7 +24,6 @@ public class LectorCSVConexiones {
     public void cargarConexionesDesdeCSV(String rutaArchivo) {
         try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
-            boolean primeraLinea = true;
             int lineasProcesadas = 0;
             int lineasError = 0;
 
@@ -33,14 +32,6 @@ public class LectorCSVConexiones {
             }
 
             while ((linea = br.readLine()) != null) {
-                if (primeraLinea) {
-                    primeraLinea = false;
-                    if (callback != null) {
-                        callback.reportarLinea("Encabezado detectado, iniciando procesamiento...", "info");
-                    }
-                    continue;
-                }
-
                 if (procesarLinea(linea)) {
                     lineasProcesadas++;
                     if (callback != null) {

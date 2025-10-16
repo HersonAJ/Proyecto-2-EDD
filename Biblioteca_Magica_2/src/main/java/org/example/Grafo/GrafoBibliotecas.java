@@ -1,13 +1,13 @@
 package org.example.Grafo;
 
-import java.util.*;
 import org.example.Modelos.Biblioteca;
+import org.example.TablaHash.*;
 
 public class GrafoBibliotecas {
-    private Map<String, Vertice> vertices;
+    private TablaHash<String, Vertice> vertices;
 
     public GrafoBibliotecas() {
-        this.vertices = new HashMap<>();
+        this.vertices = new TablaHash<>();
     }
 
     // Métodos para gestionar bibliotecas
@@ -29,10 +29,15 @@ public class GrafoBibliotecas {
         return (vertice != null) ? vertice.getBiblioteca() : null;
     }
 
-    public Map<String, Biblioteca> getBibliotecas() {
-        Map<String, Biblioteca> bibliotecas = new HashMap<>();
-        for (Vertice vertice : vertices.values()) {
+    public TablaHash<String, Biblioteca> getBibliotecas() {
+        TablaHash<String, Biblioteca> bibliotecas = new TablaHash<>();
+        Iterador<Vertice> iterador = vertices.iteradorValores();
+
+        int contador = 0;
+        while (iterador.tieneSiguiente()) {
+            Vertice vertice = iterador.siguiente();
             bibliotecas.put(vertice.getId(), vertice.getBiblioteca());
+            contador++;
         }
         return bibliotecas;
     }
@@ -59,17 +64,24 @@ public class GrafoBibliotecas {
         return true;
     }
 
-    public List<Arista> getTodasLasAristas() {
-        List<Arista> todasAristas = new ArrayList<>();
-        for (Vertice vertice : vertices.values()) {
-            todasAristas.addAll(vertice.getConexionesSalientes());
+    public ListaAdyacencia getTodasLasAristas() {
+        ListaAdyacencia todasAristas = new ListaAdyacencia();
+        Iterador<Vertice> iterador = vertices.iteradorValores();
+
+        while (iterador.tieneSiguiente()) {
+            Vertice vertice = iterador.siguiente();
+            ListaAdyacencia.IteradorLista iteradorAristas = vertice.getConexionesSalientes().iterador();
+
+            while (iteradorAristas.tieneSiguiente()) {
+                todasAristas.agregar(iteradorAristas.siguiente());
+            }
         }
         return todasAristas;
     }
 
-    public List<Arista> getConexionesSalientes(String idBiblioteca) {
+    public ListaAdyacencia getConexionesSalientes(String idBiblioteca) {
         Vertice vertice = vertices.get(idBiblioteca);
-        return (vertice != null) ? vertice.getConexionesSalientes() : new ArrayList<>();
+        return (vertice != null) ? vertice.getConexionesSalientes() : new ListaAdyacencia();
     }
 
     // Método para verificar conexión entre bibliotecas
@@ -77,7 +89,9 @@ public class GrafoBibliotecas {
         Vertice origen = vertices.get(idOrigen);
         if (origen == null) return false;
 
-        for (Arista arista : origen.getConexionesSalientes()) {
+        ListaAdyacencia.IteradorLista iterador = origen.getConexionesSalientes().iterador();
+        while (iterador.tieneSiguiente()) {
+            Arista arista = iterador.siguiente();
             if (arista.getIdDestino().equals(idDestino)) {
                 return true;
             }
@@ -90,9 +104,11 @@ public class GrafoBibliotecas {
         StringBuilder sb = new StringBuilder();
         sb.append("Grafo con ").append(vertices.size()).append(" bibliotecas\n");
 
-        for (Vertice vertice : vertices.values()) {
+        Iterador<Vertice> iterador = vertices.iteradorValores();
+        while (iterador.tieneSiguiente()) {
+            Vertice vertice = iterador.siguiente();
             sb.append("- ").append(vertice.getId())
-                    .append(" tiene ").append(vertice.getConexionesSalientes().size())
+                    .append(" tiene ").append(vertice.getConexionesSalientes().getTamaño())
                     .append(" conexiones salientes\n");
         }
 
@@ -103,7 +119,7 @@ public class GrafoBibliotecas {
     public String toString() {
         return "GrafoBibliotecas{" +
                 "vertices=" + vertices.size() +
-                ", aristas=" + getTodasLasAristas().size() +
+                ", aristas=" + getTodasLasAristas().getTamaño() +
                 '}';
     }
 }

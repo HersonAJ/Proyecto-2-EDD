@@ -1,6 +1,7 @@
 package org.example.GUI;
 
 import org.example.Grafo.GrafoBibliotecas;
+import org.example.Grafo.ListaAdyacencia;
 import org.example.Modelos.Biblioteca;
 import org.example.Grafo.Arista;
 import org.example.Modelos.Libro;
@@ -12,6 +13,7 @@ import org.example.GUI.VistasGrafo.CargarCSVBibliotecaDialog;
 import org.example.Modelos.LectorCSVBiblioteca;
 import org.example.Modelos.LectorCSVConexiones;
 import org.example.GUI.VistasGrafo.CargarCSVConexionesDialog;
+import org.example.TablaHash.*;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -288,10 +290,13 @@ public class MainWindow2 extends JFrame {
 
         sb.append("RESUMEN:\n");
         sb.append("• Bibliotecas: ").append(grafo.getBibliotecas().size()).append("\n");
-        sb.append("• Conexiones: ").append(grafo.getTodasLasAristas().size()).append("\n\n");
+        sb.append("• Conexiones: ").append(grafo.getTodasLasAristas().getTamaño()).append("\n\n");
 
         sb.append("BIBLIOTECAS:\n");
-        for (Biblioteca bib : grafo.getBibliotecas().values()) {
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        Iterador<Biblioteca> iteradorBib = bibliotecas.iteradorValores();
+        while (iteradorBib.tieneSiguiente()) {
+            Biblioteca bib = iteradorBib.siguiente();
             sb.append("• ").append(bib.getId())
                     .append(" - ").append(bib.getNombre())
                     .append(" (").append(bib.getUbicacion()).append(")\n")
@@ -301,7 +306,10 @@ public class MainWindow2 extends JFrame {
         }
 
         sb.append("\nCONEXIONES:\n");
-        for (Arista arista : grafo.getTodasLasAristas()) {
+        ListaAdyacencia todasAristas = grafo.getTodasLasAristas();
+        ListaAdyacencia.IteradorLista iteradorAristas = todasAristas.iterador();
+        while (iteradorAristas.tieneSiguiente()) {
+            Arista arista = iteradorAristas.siguiente();
             sb.append("• ").append(arista.getIdOrigen())
                     .append(" → ").append(arista.getIdDestino())
                     .append(" [Tiempo:").append(arista.getTiempo())
@@ -352,7 +360,10 @@ public class MainWindow2 extends JFrame {
             return;
         }
         combo.setEnabled(true);
-        for (String id : grafo.getBibliotecas().keySet()) {
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        Iterador<String> iterador = bibliotecas.iteradorClaves();
+        while (iterador.tieneSiguiente()) {
+            String id = iterador.siguiente();
             Biblioteca bib = grafo.getBiblioteca(id);
             combo.addItem(id + " - " + bib.getNombre() + " (" + bib.getUbicacion() + ")");
         }
@@ -363,7 +374,11 @@ public class MainWindow2 extends JFrame {
             JPanel panel = (JPanel) tabs.getComponentAt(2);
             JPanel panelSelector = (JPanel) ((BorderLayout) panel.getLayout()).getLayoutComponent(BorderLayout.NORTH);
             for (Component c : panelSelector.getComponents()) {
-                if (c instanceof JComboBox<?>) return (JComboBox<String>) c;
+                if (c instanceof JComboBox) {
+                    @SuppressWarnings("unchecked")
+                    JComboBox<String> combo = (JComboBox<String>) c;
+                    return combo;
+                }
             }
         } catch (Exception ignored) {}
         return null;

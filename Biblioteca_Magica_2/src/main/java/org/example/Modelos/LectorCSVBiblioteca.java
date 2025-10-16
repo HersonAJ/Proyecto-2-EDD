@@ -4,6 +4,7 @@ import org.example.Grafo.GrafoBibliotecas;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class LectorCSVBiblioteca {
     private GrafoBibliotecas grafo;
@@ -25,7 +26,6 @@ public class LectorCSVBiblioteca {
     public void cargarBibliotecasDesdeCSV(String rutaArchivo) {
         try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
-            boolean primeraLinea = true;
             int lineasProcesadas = 0;
             int lineasError = 0;
 
@@ -34,14 +34,6 @@ public class LectorCSVBiblioteca {
             }
 
             while ((linea = br.readLine()) != null) {
-                if (primeraLinea) {
-                    primeraLinea = false;
-                    if (callback != null) {
-                        callback.reportarLinea("Encabezado detectado, iniciando procesamiento...", "info");
-                    }
-                    continue;
-                }
-
                 if (procesarLinea(linea)) {
                     lineasProcesadas++;
                     if (callback != null) {
@@ -67,15 +59,16 @@ public class LectorCSVBiblioteca {
         }
     }
 
-    // ... (el resto del código de procesarLinea, limpiarCampo, validarID se mantiene igual)
     private boolean procesarLinea(String linea) {
         if (!linea.contains("\"")) {
+            if (callback != null) callback.reportarLinea("Línea sin comillas: " + linea, "error");
             return false;
         }
 
         String[] campos = linea.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
 
         if (campos.length != 6) {
+            if (callback != null) callback.reportarLinea("Campos incorrectos: " + campos.length + " en: " + linea, "error");
             return false;
         }
 
@@ -87,20 +80,30 @@ public class LectorCSVBiblioteca {
             String tTraspasoStr = limpiarCampo(campos[4]);
             String intervaloStr = limpiarCampo(campos[5]);
 
-            if (!validarID(id)) {
-                return false;
+            // DEBUG: Mostrar qué se está procesando
+            if (callback != null) {
+                callback.reportarLinea("Procesando ID: " + id + " | Campos: " + Arrays.toString(campos), "info");
             }
+
+            if (!validarID(id)) return false;
 
             int tIngreso = Integer.parseInt(tIngresoStr);
             int tTraspaso = Integer.parseInt(tTraspasoStr);
             int intervalo = Integer.parseInt(intervaloStr);
 
             boolean agregado = grafo.agregarBiblioteca(id, nombre, ubicacion, tIngreso, tTraspaso, intervalo);
+
+            if (!agregado && callback != null) {
+                callback.reportarLinea("Biblioteca NO agregada (¿duplicado?): " + id, "error");
+            }
+
             return agregado;
 
         } catch (NumberFormatException e) {
+            if (callback != null) callback.reportarLinea("Error numérico en: " + linea, "error");
             return false;
         } catch (Exception e) {
+            if (callback != null) callback.reportarLinea("Error general en: " + linea + " - " + e.getMessage(), "error");
             return false;
         }
     }

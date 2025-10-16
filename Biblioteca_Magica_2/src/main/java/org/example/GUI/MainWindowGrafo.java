@@ -1,9 +1,12 @@
 package org.example.GUI;
 
 import org.example.Grafo.GrafoBibliotecas;
+import org.example.Grafo.ListaAdyacencia;
 import org.example.Grafo.Vertice;
 import org.example.Modelos.Biblioteca;
 import org.example.Grafo.Arista;
+import org.example.TablaHash.Iterador;
+import org.example.TablaHash.TablaHash;
 
 import javax.swing.*;
 import java.awt.*;
@@ -66,9 +69,11 @@ public class MainWindowGrafo extends JFrame {
     private void inicializarLayoutFuerza() {
         // Inicializar posiciones aleatorias dentro del área visible
         Random rand = new Random();
-        Map<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
 
-        for (String id : bibliotecas.keySet()) {
+        Iterador<String> iterador = bibliotecas.iteradorClaves();
+        while (iterador.tieneSiguiente()) {
+            String id = iterador.siguiente();
             int x = 100 + rand.nextInt(1800); // Distribuir en área amplia
             int y = 100 + rand.nextInt(1800);
             posiciones.put(id, new Point(x, y));
@@ -83,21 +88,28 @@ public class MainWindowGrafo extends JFrame {
         final double ATRACCION = 0.01;     // Fuerza de atracción
         final double LONGITUD_ARISTA = 150.0; // Longitud ideal de aristas
 
-        Map<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
-        List<Arista> aristas = grafo.getTodasLasAristas();
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        ListaAdyacencia aristas = grafo.getTodasLasAristas();
 
         for (int iter = 0; iter < iteraciones; iter++) {
             Map<String, Point> fuerzas = new HashMap<>();
 
             // Inicializar fuerzas en cero
-            for (String id : bibliotecas.keySet()) {
+            Iterador<String> iteradorIds = bibliotecas.iteradorClaves();
+            while (iteradorIds.tieneSiguiente()) {
+                String id = iteradorIds.siguiente();
                 fuerzas.put(id, new Point(0, 0));
             }
 
             // Calcular fuerzas de repulsión entre todos los nodos
-            for (String id1 : bibliotecas.keySet()) {
+            Iterador<String> iterador1 = bibliotecas.iteradorClaves();
+            while (iterador1.tieneSiguiente()) {
+                String id1 = iterador1.siguiente();
                 Point p1 = posiciones.get(id1);
-                for (String id2 : bibliotecas.keySet()) {
+
+                Iterador<String> iterador2 = bibliotecas.iteradorClaves();
+                while (iterador2.tieneSiguiente()) {
+                    String id2 = iterador2.siguiente();
                     if (!id1.equals(id2)) {
                         Point p2 = posiciones.get(id2);
                         double dx = p1.x - p2.x;
@@ -117,7 +129,9 @@ public class MainWindowGrafo extends JFrame {
             }
 
             // Calcular fuerzas de atracción por las aristas
-            for (Arista arista : aristas) {
+            ListaAdyacencia.IteradorLista iteradorAristas = aristas.iterador();
+            while (iteradorAristas.tieneSiguiente()) {
+                Arista arista = iteradorAristas.siguiente();
                 Point p1 = posiciones.get(arista.getIdOrigen());
                 Point p2 = posiciones.get(arista.getIdDestino());
 
@@ -145,7 +159,9 @@ public class MainWindowGrafo extends JFrame {
             }
 
             // Aplicar fuerzas con límite de movimiento
-            for (String id : bibliotecas.keySet()) {
+            Iterador<String> iteradorFinal = bibliotecas.iteradorClaves();
+            while (iteradorFinal.tieneSiguiente()) {
+                String id = iteradorFinal.siguiente();
                 Point fuerza = fuerzas.get(id);
                 Point pos = posiciones.get(id);
 
@@ -173,7 +189,10 @@ public class MainWindowGrafo extends JFrame {
 
         // === DIBUJAR ARISTAS PRIMERO (para que queden detrás de los nodos) ===
         g2d.setStroke(new BasicStroke(1.5f));
-        for (Arista arista : grafo.getTodasLasAristas()) {
+        ListaAdyacencia todasAristas = grafo.getTodasLasAristas();
+        ListaAdyacencia.IteradorLista iteradorAristas = todasAristas.iterador();
+        while (iteradorAristas.tieneSiguiente()) {
+            Arista arista = iteradorAristas.siguiente();
             Point pOrigen = posiciones.get(arista.getIdOrigen());
             Point pDestino = posiciones.get(arista.getIdDestino());
             if (pOrigen == null || pDestino == null) continue;
@@ -204,7 +223,7 @@ public class MainWindowGrafo extends JFrame {
 
         // === DIBUJAR NODOS ===
         g2d.setStroke(new BasicStroke(2f));
-        Map<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
 
         for (Map.Entry<String, Point> entry : posiciones.entrySet()) {
             String id = entry.getKey();
@@ -252,14 +271,20 @@ public class MainWindowGrafo extends JFrame {
         sb.append("=== RED DE BIBLIOTECAS ===\n\n");
 
         sb.append("Bibliotecas (").append(grafo.getBibliotecas().size()).append("):\n");
-        for (Biblioteca bib : grafo.getBibliotecas().values()) {
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        Iterador<Biblioteca> iteradorBib = bibliotecas.iteradorValores();
+        while (iteradorBib.tieneSiguiente()) {
+            Biblioteca bib = iteradorBib.siguiente();
             sb.append("• ").append(bib.getId())
                     .append(" - ").append(bib.getNombre())
                     .append(" (").append(bib.getUbicacion()).append(")\n");
         }
 
-        sb.append("\nConexiones (").append(grafo.getTodasLasAristas().size()).append("):\n");
-        for (Arista arista : grafo.getTodasLasAristas()) {
+        sb.append("\nConexiones (").append(grafo.getTodasLasAristas().getTamaño()).append("):\n");
+        ListaAdyacencia todasAristas = grafo.getTodasLasAristas();
+        ListaAdyacencia.IteradorLista iteradorAristas = todasAristas.iterador();
+        while (iteradorAristas.tieneSiguiente()) {
+            Arista arista = iteradorAristas.siguiente();
             sb.append("• ").append(arista.getIdOrigen())
                     .append(" → ").append(arista.getIdDestino())
                     .append(" [T:").append(arista.getTiempo())
@@ -268,7 +293,6 @@ public class MainWindowGrafo extends JFrame {
 
         return sb.toString();
     }
-
     private void dibujarFlecha(Graphics2D g2d, Point p1, Point p2, int tamaño, int ancho) {
         double angulo = Math.atan2(p2.y - p1.y, p2.x - p1.x);
 
