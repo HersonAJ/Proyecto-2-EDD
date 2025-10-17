@@ -12,10 +12,10 @@ public class Biblioteca {
     private String nombre;
     private String ubicacion;
 
-    //parametros de tiempo
-    private int tiempoIngreso;
-    private int tiempoTraspaso;
-    private int intervaloDespacho;
+    //nuevos atributos
+    private Cola<Libro> colaIngreso;
+    private Cola<Libro> colaTraspaso;
+    private Cola<Libro> colaSalida;
 
     //estructuras de cada arbol
     private ArbolAVL arbolTitulos;
@@ -25,13 +25,14 @@ public class Biblioteca {
     private IndiceISBN indiceISBN;
 
     //constructor basico
+    //sobrecargando el constructor
     public Biblioteca(String id, String nombre, String ubicacion, int tiempoIngreso, int tiempoTraspaso, int intervaloDespacho) { //pasar el string a int para los tiempos
         this.id = id;
         this.nombre = nombre;
         this.ubicacion = ubicacion;
-        this.tiempoIngreso = tiempoIngreso;
-        this.tiempoTraspaso = tiempoTraspaso;
-        this.intervaloDespacho = intervaloDespacho;
+        this.colaIngreso = new Cola<>(tiempoIngreso, "ingreso");
+        this.colaTraspaso = new Cola<>(tiempoTraspaso, "traspaso");
+        this.colaSalida = new Cola<>(intervaloDespacho, "salida");
 
         //inicializacion de estructuras vacias
         this.arbolTitulos = new ArbolAVL();
@@ -42,13 +43,11 @@ public class Biblioteca {
 
     }
 
+
     // Getters y Setters básicos
     public String getId() { return id; }
     public String getNombre() { return nombre; }
     public String getUbicacion() { return ubicacion; }
-    public int getTiempoIngreso() { return tiempoIngreso; }
-    public int getTiempoTraspaso() { return tiempoTraspaso; }
-    public int getIntervaloDespacho() { return intervaloDespacho; }
 
     public ArbolAVL getArbolTitulos() { return arbolTitulos; }
     public ArbolB getArbolFechas() { return arbolFechas; }
@@ -116,9 +115,14 @@ public class Biblioteca {
         return catalogo.estaVacio();
     }
 
-    @Override
+   /* @Override
     public String toString() {
         return id + " - " + nombre + " (" + ubicacion + ") " +
                 "[Ingreso:" + tiempoIngreso + "s, Traspaso:" + tiempoTraspaso + "s, Intervalo de Despacho:" + intervaloDespacho + "s]";
-    }
+    }*/
+
+    // Getters para las colas
+    public Cola<Libro> getColaIngreso() { return colaIngreso; }
+    public Cola<Libro> getColaTraspaso() { return colaTraspaso; }
+    public Cola<Libro> getColaSalida() { return colaSalida; }
 }

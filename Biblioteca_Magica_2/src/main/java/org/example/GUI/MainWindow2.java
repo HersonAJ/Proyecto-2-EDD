@@ -300,9 +300,9 @@ public class MainWindow2 extends JFrame {
             sb.append("• ").append(bib.getId())
                     .append(" - ").append(bib.getNombre())
                     .append(" (").append(bib.getUbicacion()).append(")\n")
-                    .append("  Tiempos [Ingreso:").append(bib.getTiempoIngreso())
-                    .append("s, Traspaso:").append(bib.getTiempoTraspaso())
-                    .append("s, Intervalo:").append(bib.getIntervaloDespacho()).append("s]\n");
+                    .append("  Tiempos [Ingreso:").append(bib.getColaIngreso().getTiempoProcesamiento())
+                    .append("s, Traspaso:").append(bib.getColaTraspaso().getTiempoProcesamiento())
+                    .append("s, Intervalo:").append(bib.getColaSalida().getTiempoProcesamiento()).append("s]\n");
         }
 
         sb.append("\nCONEXIONES:\n");
