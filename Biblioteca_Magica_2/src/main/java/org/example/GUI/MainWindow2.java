@@ -14,6 +14,8 @@ import org.example.Modelos.LectorCSVBiblioteca;
 import org.example.Modelos.LectorCSVConexiones;
 import org.example.GUI.VistasGrafo.CargarCSVConexionesDialog;
 import org.example.TablaHash.*;
+import org.example.Modelos.CoordinadorEnvios;
+import org.example.GUI.PanelEnvioLibros;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -27,6 +29,8 @@ public class MainWindow2 extends JFrame {
     private JTabbedPane tabs;
     private JTextPane logWidget;
     private BibliotecaWindow bibliotecaWindow;
+    private CoordinadorEnvios coordinadorEnvios;
+    private PanelEnvioLibros panelEnvios;
 
     private LectorCSV lectorLibros;//cambiar al nuevo global
 
@@ -36,6 +40,7 @@ public class MainWindow2 extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         this.grafo = new GrafoBibliotecas();
+        this.coordinadorEnvios = new CoordinadorEnvios(grafo);
 
         initComponents();
         createMenu();
@@ -57,7 +62,20 @@ public class MainWindow2 extends JFrame {
         JPanel panelBibliotecaIndividual = crearPanelBibliotecaIndividual();
         tabs.addTab("Biblioteca Individual", panelBibliotecaIndividual);
 
+        JPanel panelEnvios = crearPanelEnvios();
+        tabs.addTab("Envio entre bibiliotecas", panelEnvios);
+
         setContentPane(tabs);
+    }
+
+    private JPanel crearPanelEnvios() {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        // Crear el panel de envíos pasando el coordinador y el grafo
+        this.panelEnvios = new PanelEnvioLibros(coordinadorEnvios, grafo);
+        panel.add(panelEnvios, BorderLayout.CENTER);
+
+        return panel;
     }
 
     private JPanel crearPanelInformacion() {
@@ -187,6 +205,24 @@ public class MainWindow2 extends JFrame {
         agregarLibro.addActionListener(e -> agregarLibroManual());
         menuGestion.add(agregarLibro);
 
+        JMenu menuSimulacion = new JMenu("Simulación");
+
+        JMenuItem iniciarSimulacion = new JMenuItem("Iniciar Simulación de Envíos");
+        iniciarSimulacion.addActionListener(e -> iniciarSimulacionEnvios());
+        menuSimulacion.add(iniciarSimulacion);
+
+        JMenuItem detenerSimulacion = new JMenuItem("Detener Simulación");
+        detenerSimulacion.addActionListener(e -> detenerSimulacionEnvios());
+        menuSimulacion.add(detenerSimulacion);
+
+        menuSimulacion.addSeparator();
+
+        JMenuItem verEstadoEnvios = new JMenuItem("Ver Estado de Envíos");
+        verEstadoEnvios.addActionListener(e -> verEstadoEnvios());
+        menuSimulacion.add(verEstadoEnvios);
+
+
+
         // Menú Visualización
         JMenu menuVisualizacion = new JMenu("Visualización");
 
@@ -197,6 +233,7 @@ public class MainWindow2 extends JFrame {
         // Agregar menús
         menuBar.add(menuArchivo);
         menuBar.add(menuGestion);
+        menuBar.add(menuSimulacion);
         menuBar.add(menuVisualizacion);
 
         setJMenuBar(menuBar);
@@ -252,6 +289,7 @@ public class MainWindow2 extends JFrame {
         );
         dialog.setVisible(true);
         actualizarComboBibliotecas(buscarComboBibliotecas());
+        actualizarPanelEnvios();
     }
 
 
@@ -277,6 +315,7 @@ public class MainWindow2 extends JFrame {
                 }
         );
         dialog.setVisible(true);
+        actualizarPanelEnvios();
     }
 
     private void abrirVisualizacionGrafo() {
@@ -384,4 +423,67 @@ public class MainWindow2 extends JFrame {
         return null;
     }
 
+    // NUEVOS MÉTODOS para control de simulación
+    private void iniciarSimulacionEnvios() {
+        if (grafo.getBibliotecas().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No hay bibliotecas en el sistema. Cargue bibliotecas primero.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        coordinadorEnvios.iniciarSimulacion();
+        appendLog("Simulación de envíos iniciada", "info");
+        JOptionPane.showMessageDialog(this,
+                "Simulación de envíos iniciada. Los libros en cola comenzarán a procesarse.",
+                "Simulación Iniciada", JOptionPane.INFORMATION_MESSAGE);
+    }
+    private void detenerSimulacionEnvios() {
+        coordinadorEnvios.detenerSimulacion();
+        appendLog("Simulación de envíos detenida", "info");
+        JOptionPane.showMessageDialog(this,
+                "Simulación de envíos detenida.",
+                "Simulación Detenida", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+
+    private void verEstadoEnvios() {
+        StringBuilder estado = new StringBuilder();
+        estado.append("=== ESTADO DE ENVÍOS ===\n\n");
+
+        if (!coordinadorEnvios.isSimulacionActiva()) {
+            estado.append("Simulación INACTIVA\n");
+        } else {
+            estado.append("Simulación ACTIVA\n");
+        }
+
+        estado.append("\nBIBLIOTECAS Y SUS COLAS:\n");
+
+        TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
+        Iterador<Biblioteca> iterador = bibliotecas.iteradorValores();
+
+        while (iterador.tieneSiguiente()) {
+            Biblioteca bib = iterador.siguiente();
+            estado.append("\n").append(bib.getId()).append(" - ").append(bib.getNombre()).append(":\n");
+            estado.append("  Ingreso: ").append(bib.getColaIngreso().getTamaño()).append(" libros\n");
+            estado.append("  Traspaso: ").append(bib.getColaTraspaso().getTamaño()).append(" libros\n");
+            estado.append("  Salida: ").append(bib.getColaSalida().getTamaño()).append(" libros\n");
+        }
+
+        JTextArea textArea = new JTextArea(estado.toString());
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(500, 400));
+
+        JOptionPane.showMessageDialog(this, scrollPane,
+                "Estado de Envíos", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void actualizarPanelEnvios() {
+        if (panelEnvios != null) {
+            panelEnvios.actualizarDatos();
+        }
+    }
 }

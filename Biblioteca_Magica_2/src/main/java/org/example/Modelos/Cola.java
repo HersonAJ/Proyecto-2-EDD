@@ -19,6 +19,8 @@ public class Cola <T> {
     private int tiempoProcesamiento;
     private String tipo; //ingreso, traspaso, salida
     private long ultimoProcesamiento; //timestamp del ultimo procesamiento
+    private Thread hiloProcesamiento;
+    private boolean activa;
 
     //constructor
     public Cola(int tiempoProcesamiento, String tipo) {
@@ -123,5 +125,28 @@ public class Cola <T> {
             actual = actual.siguiente;
         }
         System.out.println("NULL");
+    }
+
+    public void iniciarProcesamiento() {
+        this.activa = true;
+        this.hiloProcesamiento = new Thread(() -> {
+            while (activa) {
+                if (puedeProcesar() && !estaVacia()) {
+                    T elemento = desencolar();
+                    // Notificar que se procesó (usar callback)
+                    System.out.println("Procesado: " + elemento);
+                }
+                try {
+                    Thread.sleep(100); // Revisar cada 100ms
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        });
+        hiloProcesamiento.start();
+    }
+
+    public void detenerProcesamiento() {
+        this.activa = false;
     }
 }

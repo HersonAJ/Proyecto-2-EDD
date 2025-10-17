@@ -1,8 +1,5 @@
 digraph Arbol {
     rankdir=TB;
     node [shape=record, style=filled, fillcolor=lightyellow, fontname="Arial", fontsize=10];
-    n1112530490 [label="<L> | andando | <R>"];
-    n1677131751 [label="<L> | barcos | <R>"];
-    n1112530490:R -> n1677131751;
-    n1677131751 [label="<L> | barcos | <R>"];
+    n639198335 [label="<L> | prueba | <R>"];
 }
