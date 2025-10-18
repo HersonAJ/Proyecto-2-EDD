@@ -2,19 +2,19 @@ package org.example.Modelos;
 
 import org.example.Grafo.GrafoBibliotecas;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class CoordinadorEnvios {
     private GrafoBibliotecas grafo;
-    private boolean simulacionActiva;
+    private ScheduledExecutorService scheduler;
 
     public CoordinadorEnvios(GrafoBibliotecas grafo) {
         this.grafo = grafo;
-        this.simulacionActiva = false;
+        this.scheduler = Executors.newScheduledThreadPool(10); // hasta 10 tareas simultáneas
     }
 
-     //Inicia el envío de un libro desde una biblioteca origen a destino
+    // Inicia el envío de un libro desde origen a destino
     public boolean iniciarEnvioLibro(Libro libro, String idOrigen, String idDestino, String prioridad) {
-        // Validar bibliotecas existentes
         if (!grafo.existeBiblioteca(idOrigen) || !grafo.existeBiblioteca(idDestino)) {
             System.err.println("Error: Bibliotecas origen o destino no existen");
             return false;
@@ -30,51 +30,135 @@ public class CoordinadorEnvios {
         // Configurar libro para el envío
         configurarLibroParaEnvio(libro, idOrigen, idDestino, prioridad, ruta);
 
-        // Encolar en biblioteca origen
-        Biblioteca bibliotecaOrigen = grafo.getBiblioteca(idOrigen);
-        bibliotecaOrigen.getColaIngreso().encolar(libro);
+        // Encolar en cola de ingreso de biblioteca origen
+        Biblioteca origen = grafo.getBiblioteca(idOrigen);
+        origen.getColaIngreso().encolar(libro);
+        System.out.println("📦 Libro '" + libro.getTitulo() + "' encolado en Ingreso de " + idOrigen);
 
-        System.out.println("📦 Libro '" + libro.getTitulo() + "' encolado en " + idOrigen +
-                " con ruta: " + ruta);
+        // Programar procesamiento de ingreso
+        programarProcesamientoIngreso(origen, libro);
+
         return true;
     }
 
-     //Calcula la ruta óptima usando Dijkstra
-    private List<String> calcularRutaOptima(String origen, String destino, String prioridad) {
-        // Implementación simplificada - aquí iría Dijkstra completo
-        // Por ahora retorna una ruta directa si existe conexión
-        if (grafo.estanConectadas(origen, destino)) {
-            return Arrays.asList(origen, destino);
-        }
-
-        // Buscar una ruta intermedia (simulación)
-        // En la implementación real aquí iría el algoritmo de Dijkstra
-        List<String> ruta = buscarRutaIntermedia(origen, destino);
-        return ruta;
+    // PROGRAMADORES DE EVENTOS DE COLAS
+    private void programarProcesamientoIngreso(Biblioteca biblioteca, Libro libro) {
+        long tiempo = biblioteca.getColaIngreso().getTiempoProcesamiento();
+        scheduler.schedule(() -> procesarIngreso(biblioteca, libro), tiempo, TimeUnit.MILLISECONDS);
     }
 
-     //Busca una ruta con bibliotecas intermedias (simulación temporal)
-    private List<String> buscarRutaIntermedia(String origen, String destino) {
-        // Esto es una simulación - la implementación real usaría Dijkstra
-        // Revisar conexiones de origen
-        var conexionesOrigen = grafo.getConexionesSalientes(origen);
-        var iterador = conexionesOrigen.iterador();
+    private void programarProcesamientoTraspaso(Biblioteca biblioteca, Libro libro) {
+        long tiempo = biblioteca.getColaTraspaso().getTiempoProcesamiento();
+        scheduler.schedule(() -> procesarTraspaso(biblioteca, libro), tiempo, TimeUnit.MILLISECONDS);
+    }
 
-        while (iterador.tieneSiguiente()) {
-            var arista = iterador.siguiente();
-            String intermedia = arista.getIdDestino();
+    private void programarProcesamientoSalida(Biblioteca biblioteca, Libro libro) {
+        long tiempo = biblioteca.getColaSalida().getTiempoProcesamiento();
+        scheduler.schedule(() -> procesarSalida(biblioteca, libro), tiempo, TimeUnit.MILLISECONDS);
+    }
 
-            // Si la intermedia conecta con el destino
-            if (grafo.estanConectadas(intermedia, destino)) {
-                return Arrays.asList(origen, intermedia, destino);
+    // ETAPAS DE PROCESAMIENTO
+    private void procesarIngreso(Biblioteca biblioteca, Libro libro) {
+        notificar("📥 " + libro.getTitulo() + " pasó a Traspaso en " + biblioteca.getId());
+        biblioteca.getColaTraspaso().encolar(libro);
+        programarProcesamientoTraspaso(biblioteca, libro);
+    }
+
+    private void procesarTraspaso(Biblioteca biblioteca, Libro libro) {
+        // VERIFICAR SI ES EL DESTINO FINAL
+        if (biblioteca.getId().equals(libro.getIdBibliotecaDestino())) {
+            // ES EL DESTINO FINAL - Registrar directamente sin pasar por Salida
+            notificar("📚 " + libro.getTitulo() + " llegó a destino final en " + biblioteca.getId());
+            biblioteca.agregarLibro(libro);
+            libro.setEstado("Disponible");
+            System.out.println("Libro '" + libro.getTitulo() + "' registrado en destino final " + biblioteca.getId());
+        } else {
+            // NO es destino final - continuar flujo normal
+            notificar("🚚 " + libro.getTitulo() + " pasó a Salida en " + biblioteca.getId());
+            biblioteca.getColaSalida().encolar(libro);
+            programarProcesamientoSalida(biblioteca, libro);
+        }
+    }
+
+    private void procesarSalida(Biblioteca biblioteca, Libro libro) {
+        notificar("🚀 " + libro.getTitulo() + " salió de " + biblioteca.getId());
+        biblioteca.getColaSalida().desencolar(); // procesado
+
+        System.out.println("=== DEBUG PROCESAR SALIDA ===");
+        System.out.println("Biblioteca actual: " + biblioteca.getId());
+        System.out.println("Destino final: " + libro.getIdBibliotecaDestino());
+        System.out.println("Siguiente biblioteca: " + libro.getSiguienteBiblioteca());
+        System.out.println("Es destino final: " + libro.esDestinoFinal());
+
+        // Verificar si la siguiente biblioteca es el destino final
+        String siguienteBiblioteca = libro.getSiguienteBiblioteca();
+
+        if (siguienteBiblioteca == null) {
+            System.out.println("📌 ENTRO EN CASO: siguienteBiblioteca == null");
+            // Ya está en la última biblioteca de la ruta, registrar y terminar
+            biblioteca.agregarLibro(libro);
+            libro.setEstado("Disponible");
+            System.out.println("✅ SE LLAMÓ A agregarLibro() en " + biblioteca.getId());
+            notificar("📚 '" + libro.getTitulo() + "' llegó a su destino final " + biblioteca.getId());
+            return;
+        } else {
+            System.out.println("📌 ENTRO EN CASO: Hay siguiente biblioteca - " + siguienteBiblioteca);
+        }
+
+        // Si hay siguiente biblioteca, mover sin avanzar primero
+        // NO llamar a avanzarEnRuta() aquí - se hará después de procesar en la siguiente biblioteca
+        moverLibroASiguienteBiblioteca(libro);
+    }
+
+    // MOVIMIENTO ENTRE BIBLIOTECAS
+    private void moverLibroASiguienteBiblioteca(Libro libro) {
+        System.out.println("=== DEBUG MOVER ===");
+        System.out.println("Ruta actual del libro: " + libro.getRuta());
+        System.out.println("Indice actual: " + libro.getIndiceRutaActual());
+        System.out.println("Biblioteca actual: " + libro.getBibliotecaActual());
+        System.out.println("Siguiente biblioteca: " + libro.getSiguienteBiblioteca());
+
+        String siguienteId = libro.getSiguienteBiblioteca();
+
+        // Si siguienteId es null, significa que ya estamos en la última biblioteca
+        if (siguienteId == null) {
+            System.out.println("📌 MOVER: siguienteId es NULL - marcando como destino final");
+
+            // Registrar en la biblioteca actual (que es el destino final)
+            Biblioteca bibliotecaActual = grafo.getBiblioteca(libro.getBibliotecaActual());
+            if (bibliotecaActual != null) {
+                bibliotecaActual.agregarLibro(libro);
+                libro.setEstado("Disponible");
+                System.out.println("✅ REGISTRADO en biblioteca actual: " + libro.getBibliotecaActual());
+                notificar("📚 '" + libro.getTitulo() + "' llegó a su destino final " + libro.getBibliotecaActual());
             }
+            return;
         }
-        return null; // No se encontró ruta
+
+        // Si hay siguiente biblioteca, encolar en su cola de ingreso
+        Biblioteca siguiente = grafo.getBiblioteca(siguienteId);
+        if (siguiente != null) {
+            siguiente.getColaIngreso().encolar(libro);
+
+            // AVANZAR LA RUTA SOLO DESPUÉS de encolar en la siguiente biblioteca
+            libro.avanzarEnRuta();
+
+            notificar("➡️ '" + libro.getTitulo() + "' llegó a " + siguiente.getId());
+            programarProcesamientoIngreso(siguiente, libro);
+        } else {
+            System.err.println("⚠️ No se encontró la siguiente biblioteca en la ruta: " + siguienteId);
+        }
     }
 
-    //Configura el libro con toda la información del envío
-    private void configurarLibroParaEnvio(Libro libro, String origen, String destino,
-                                          String prioridad, List<String> ruta) {
+    // UTILITARIOS
+    private List<String> calcularRutaOptima(String origen, String destino, String prioridad) {
+        // luego reemplazar con Dijkstra
+        if (grafo.estanConectadas(origen, destino))
+            return Arrays.asList(origen, destino);
+        return null;
+    }
+
+    private void configurarLibroParaEnvio(Libro libro, String origen, String destino, String prioridad, List<String> ruta) {
         libro.setIdBibliotecaOrigen(origen);
         libro.setIdBibliotecaDestino(destino);
         libro.setPrioridad(prioridad);
@@ -83,136 +167,21 @@ public class CoordinadorEnvios {
         libro.setEstado("En tránsito");
     }
 
-    //Mueve un libro a la siguiente biblioteca en su ruta
-    public void moverLibroASiguienteBiblioteca(Libro libro) {
-        if (libro.esDestinoFinal()) {
-            // Llegó a su destino final
-            String idDestino = libro.getIdBibliotecaDestino();
-            Biblioteca bibliotecaDestino = grafo.getBiblioteca(idDestino);
-
-            if (bibliotecaDestino != null) {
-                // Encolar primero para procesamiento local
-                bibliotecaDestino.getColaIngreso().encolar(libro);
-                libro.setEstado("Pendiente de registro");
-                System.out.println("🎯 Libro '" + libro.getTitulo() + "' llegó a destino (" + idDestino + ") y espera registro.");
-            }
-            return;
-        }
-
-        // Caso general: aún hay ruta por recorrer
-        String siguienteBiblioteca = libro.getSiguienteBiblioteca();
-        if (siguienteBiblioteca != null) {
-            libro.avanzarEnRuta();
-            Biblioteca bibliotecaDestino = grafo.getBiblioteca(siguienteBiblioteca);
-
-            if (bibliotecaDestino != null) {
-                bibliotecaDestino.getColaIngreso().encolar(libro);
-                System.out.println("➡️ Libro '" + libro.getTitulo() + "' movido a: " + siguienteBiblioteca);
-            }
-        }
+    // Llamar al final del programa
+    public void apagar() {
+        scheduler.shutdownNow();
     }
 
-    //Procesa todos los libros listos para salir de las colas de salida
-    public void procesarDespachos() {
-        var bibliotecas = grafo.getBibliotecas();
-        var iterador = bibliotecas.iteradorValores();
+    private List<EnvioListener> listeners = new ArrayList<>();
 
-        while (iterador.tieneSiguiente()) {
-            Biblioteca bib = iterador.siguiente();
-            procesarFlujoBiblioteca(bib);
-        }
+    public void agregarListener(EnvioListener listener) {
+        listeners.add(listener);
     }
 
-    //Procesa los despachos de una biblioteca específica
-    private void procesarDespachosBiblioteca(Biblioteca biblioteca) {
-        Cola<Libro> colaSalida = biblioteca.getColaSalida();
-
-        // Procesar todos los libros listos en cola salida
-        Libro libro;
-        while ((libro = colaSalida.procesarSiguiente()) != null) {
-            System.out.println("🚀 Despachando libro '" + libro.getTitulo() +
-                    "' desde " + biblioteca.getId());
-            moverLibroASiguienteBiblioteca(libro);
+    private void notificar(String mensaje) {
+        for (EnvioListener l : listeners) {
+            l.onEvento(mensaje);
         }
     }
-
-    //Inicia la simulación continua de envíos
-    public void iniciarSimulacion() {
-        simulacionActiva = true;
-        System.out.println("🔄 Iniciando simulación de envíos...");
-
-        // En un sistema real, esto sería un thread separado
-        new Thread(() -> {
-            while (simulacionActiva) {
-                try {
-                    procesarDespachos();
-                    Thread.sleep(1000); // Procesar cada segundo
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        }).start();
-    }
-
-    //Detiene la simulación
-    public void detenerSimulacion() {
-        simulacionActiva = false;
-        System.out.println("⏹️ Simulación detenida");
-    }
-
-    // Getters
-    public GrafoBibliotecas getGrafo() { return grafo; }
-    public boolean isSimulacionActiva() { return simulacionActiva; }
-
-    private void procesarFlujoBiblioteca(Biblioteca biblioteca) {
-        Cola<Libro> ingreso = biblioteca.getColaIngreso();
-        Cola<Libro> traspaso = biblioteca.getColaTraspaso();
-        Cola<Libro> salida = biblioteca.getColaSalida();
-
-        Libro libro;
-
-        // 🔄 ORDEN DE PRIORIDAD: Salida > Traspaso > Ingreso
-        // (Para evitar cuellos de botella)
-
-        // PRIORIDAD 1: Procesar SALIDA (libros listos para enviar)
-        if (salida.puedeProcesar() && !salida.estaVacia()) {
-            libro = salida.procesarSiguiente();
-            if (libro != null) {
-                System.out.println("🚀 Despachando libro '" + libro.getTitulo() + "' desde " + biblioteca.getId());
-                moverLibroASiguienteBiblioteca(libro);
-                return; // ✅ Solo procesar UNA operación por ciclo
-            }
-        }
-
-        // PRIORIDAD 2: Procesar TRASPASO (libros en preparación)
-        if (traspaso.puedeProcesar() && !traspaso.estaVacia()) {
-            libro = traspaso.procesarSiguiente();
-            if (libro != null) {
-                if (libro.esDestinoFinal() && libro.getIdBibliotecaDestino().equals(biblioteca.getId())) {
-                    // Destino final: agregar al catálogo
-                    biblioteca.agregarLibro(libro);
-                    libro.setEstado("Disponible");
-                    System.out.println("📚 Libro '" + libro.getTitulo() + "' REGISTRADO en " + biblioteca.getId());
-                } else {
-                    // Biblioteca intermedia: enviar a salida
-                    salida.encolar(libro);
-                    System.out.println("🚪 Libro '" + libro.getTitulo() + "' listo para salir de " + biblioteca.getId());
-                }
-                return; // ✅ Solo procesar UNA operación por ciclo
-            }
-        }
-
-        // PRIORIDAD 3: Procesar INGRESO (libros recién llegados)
-        if (ingreso.puedeProcesar() && !ingreso.estaVacia()) {
-            libro = ingreso.procesarSiguiente();
-            if (libro != null) {
-                traspaso.encolar(libro);
-                System.out.println("📥 Libro '" + libro.getTitulo() + "' en preparación en " + biblioteca.getId());
-                return; // ✅ Solo procesar UNA operación por ciclo
-            }
-        }
-    }
-
 
 }

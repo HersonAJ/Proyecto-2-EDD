@@ -28,6 +28,7 @@ public class PanelEnvioLibros extends JPanel {
         this.grafo = grafo;
         initComponents();
         cargarDatos();
+        this.coordinador.agregarListener(mensaje -> SwingUtilities.invokeLater(() -> agregarLog(mensaje)));
     }
 
     private void initComponents() {
@@ -131,7 +132,6 @@ public class PanelEnvioLibros extends JPanel {
 
     private void realizarEnvio(ActionEvent e) {
         try {
-            // Validar selecciones
             if (comboBibliotecasOrigen.getSelectedItem() == null ||
                     comboBibliotecasDestino.getSelectedItem() == null ||
                     comboLibros.getSelectedItem() == null) {
@@ -141,13 +141,11 @@ public class PanelEnvioLibros extends JPanel {
                 return;
             }
 
-            // Extraer IDs de bibliotecas
             String origenCompleto = (String) comboBibliotecasOrigen.getSelectedItem();
             String destinoCompleto = (String) comboBibliotecasDestino.getSelectedItem();
             String idOrigen = origenCompleto.split(" - ")[0];
             String idDestino = destinoCompleto.split(" - ")[0];
 
-            // Validar que no sean la misma biblioteca
             if (idOrigen.equals(idDestino)) {
                 JOptionPane.showMessageDialog(this,
                         "La biblioteca origen y destino deben ser diferentes",
@@ -160,20 +158,17 @@ public class PanelEnvioLibros extends JPanel {
 
             String prioridad = (String) comboPrioridad.getSelectedItem();
 
-            // Realizar envío
             boolean exito = coordinador.iniciarEnvioLibro(libro, idOrigen, idDestino, prioridad);
 
             if (exito) {
-                agregarLog("ENVÍO INICIADO: " + libro.getTitulo() +
+                agregarLog("📦 Envío iniciado: " + libro.getTitulo() +
                         " de " + idOrigen + " a " + idDestino +
                         " (Prioridad: " + prioridad + ")");
-
                 JOptionPane.showMessageDialog(this,
-                        "Envío iniciado correctamente. El libro está en proceso de envío.",
-                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                        "El envío ha comenzado. El libro se moverá automáticamente según los tiempos de las colas.",
+                        "Envío en curso", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                agregarLog("ERROR: No se pudo iniciar el envío de " + libro.getTitulo());
-
+                agregarLog("❌ Error: no se pudo iniciar el envío de " + libro.getTitulo());
                 JOptionPane.showMessageDialog(this,
                         "No se pudo iniciar el envío. Verifique la conexión entre bibliotecas.",
                         "Error", JOptionPane.ERROR_MESSAGE);
@@ -186,6 +181,7 @@ public class PanelEnvioLibros extends JPanel {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 
     private void mostrarRutaCalculada(ActionEvent e) {
         try {
