@@ -1,20 +1,11 @@
 package org.example.GUI;
 
+import org.example.GUI.VistasGrafo.*;
 import org.example.Grafo.GrafoBibliotecas;
 import org.example.Grafo.ListaAdyacencia;
-import org.example.Modelos.Biblioteca;
+import org.example.Modelos.*;
 import org.example.Grafo.Arista;
-import org.example.Modelos.Libro;
-import org.example.Modelos.LectorCSV;
-import org.example.GUI.VistasGrafo.ConexionManual;
-import org.example.GUI.VistasGrafo.AgregarBibliotecaManual;
-import org.example.GUI.VistasGrafo.AgregarLibroManual;
-import org.example.GUI.VistasGrafo.CargarCSVBibliotecaDialog;
-import org.example.Modelos.LectorCSVBiblioteca;
-import org.example.Modelos.LectorCSVConexiones;
-import org.example.GUI.VistasGrafo.CargarCSVConexionesDialog;
 import org.example.TablaHash.*;
-import org.example.Modelos.CoordinadorEnvios;
 import org.example.GUI.PanelEnvioLibros;
 
 import javax.swing.*;
@@ -257,8 +248,20 @@ public class MainWindow2 extends JFrame {
     }
 
     private void cargarCSVLibros() {
-        appendLog("Función de carga de libros pendiente de integración", "info");
-        // TODO: Integrar con el LectorCSV existente
+        // Crear el callback para el progreso en tiempo real
+        LectorCSVLibros.ProgresoCallback progresoCallback = new LectorCSVLibros.ProgresoCallback() {
+            @Override
+            public void reportarLinea(String mensaje, String tipo) {
+                appendLog(mensaje, tipo);
+            }
+        };
+
+        CargarCSVLibrosDialog dialog = new CargarCSVLibrosDialog(this, grafo, coordinadorEnvios, () -> {
+            appendLog("Proceso de carga de libros CSV completado", "info");
+            actualizarVista();
+        }, progresoCallback);
+
+        dialog.setVisible(true);
     }
 
     // Métodos para gestión manual
