@@ -1,152 +1,168 @@
 package org.example.Modelos;
 
 public class Cola <T> {
-    //clase interna de nodo
-    private class Nodo<T> {
+    private class Nodo {
         T dato;
-        Nodo<T> siguiente;
-
-        public Nodo (T dato) {
+        Nodo siguiente;
+        Nodo(T dato) {
             this.dato = dato;
             this.siguiente = null;
         }
     }
 
-    //atributos de la cola
-    private Nodo<T> frente;
-    private Nodo<T> fin;
+    public interface Procesador<T> {
+        void procesar(T elemento, String tipoCola);
+    }
+
+    // Atributos esenciales
+    private Nodo frente;
+    private Nodo fin;
     private int tamaño;
-    private int tiempoProcesamiento;
-    private String tipo; //ingreso, traspaso, salida
-    private long ultimoProcesamiento; //timestamp del ultimo procesamiento
+    private int tiempoProcesamiento; // milisegundos
+    private String tipo; // ingreso, traspaso, salida
     private Thread hiloProcesamiento;
     private boolean activa;
+    private Procesador<T> procesador;
 
-    //constructor
+    // Constructor simplificado
     public Cola(int tiempoProcesamiento, String tipo) {
         this.frente = null;
         this.fin = null;
         this.tamaño = 0;
         this.tiempoProcesamiento = tiempoProcesamiento;
         this.tipo = tipo;
-        this.ultimoProcesamiento = 0;
+        this.activa = false;
     }
 
-    //metodos de la cola
-    //encolar al final
+    // ENCOLAR - versión simple
     public void encolar(T elemento) {
-        Nodo<T> nuevoNodo = new Nodo<>(elemento);
-
-        if (estaVacia()) {
-            frente = nuevoNodo;
-        } else  {
-            fin.siguiente = nuevoNodo;
+        synchronized (this) {
+            Nodo nuevoNodo = new Nodo(elemento);
+            if (frente == null) {
+                frente = nuevoNodo;
+            } else {
+                fin.siguiente = nuevoNodo;
+            }
+            fin = nuevoNodo;
+            tamaño++;
+            // Notificar al worker que hay trabajo
+            this.notify();
         }
-        fin = nuevoNodo;
-        tamaño++;
     }
 
-    //desencolar del frente
+    // DESENCOLAR - versión simple
     public T desencolar() {
-        if (estaVacia()) {
-            return null;
+        synchronized (this) {
+            if (frente == null) {
+                return null;
+            }
+            T dato = frente.dato;
+            frente = frente.siguiente;
+            if (frente == null) {
+                fin = null;
+            }
+            tamaño--;
+            return dato;
         }
-
-        T dato = frente.dato;
-        frente = frente.siguiente;
-
-        if (frente == null) {
-            fin = null;
-        }
-        tamaño--;
-        return dato;
     }
 
-    //ver el elemento del frente sin removerlo
-    public T frente() {
-        if (estaVacia()) {
-            return null;
-        }
-        return frente.dato;
-    }
-
+    // VERIFICAR SI ESTÁ VACÍA
     public boolean estaVacia() {
-        return frente == null;
+        synchronized (this) {
+            return frente == null;
+        }
     }
 
-    //obtener el tamaño actual
+    // GETTERS básicos
     public int getTamaño() {
-        return tamaño;
-    }
-
-    //verificar si se puede procesar respetando los tiempos
-    public boolean puedeProcesar() {
-        if (estaVacia()) {
-            return false;
+        synchronized (this) {
+            return tamaño;
         }
-
-        long tiempoActual = System.currentTimeMillis();
-        return (tiempoActual - ultimoProcesamiento) >= tiempoProcesamiento;
     }
 
-    //procesar el siguiente elemento si esta listo
-    public T procesarSiguiente() {
-        if (puedeProcesar() && !estaVacia()) {
-            ultimoProcesamiento = System.currentTimeMillis();
-            return desencolar();
-        }
-        return null;
-    }
-
-    //getters y setters
     public int getTiempoProcesamiento() {
         return tiempoProcesamiento;
-    }
-
-    public void setTiempoProcesamiento(int tiempoProcesamiento) {
-        this.tiempoProcesamiento = tiempoProcesamiento;
     }
 
     public String getTipo() {
         return tipo;
     }
 
-    //metodo de debug
-    public void mostrarCola() {
-        if (estaVacia()) {
-            System.out.println("Cola " + tipo + " vacía");
-            return;
-        }
-
-        System.out.print("Cola " + tipo + " (" + tamaño + " elementos): ");
-        Nodo<T> actual = frente;
-        while (actual != null) {
-            System.out.print(actual.dato + " -> ");
-            actual = actual.siguiente;
-        }
-        System.out.println("NULL");
+    // CONFIGURAR PROCESADOR
+    public void setProcesador(Procesador<T> procesador) {
+        this.procesador = procesador;
     }
 
+    // WORKER SIMPLIFICADO
     public void iniciarProcesamiento() {
-        this.activa = true;
-        this.hiloProcesamiento = new Thread(() -> {
+        synchronized (this) {
+            if (activa) return;
+            activa = true;
+        }
+
+        hiloProcesamiento = new Thread(() -> {
             while (activa) {
-                if (puedeProcesar() && !estaVacia()) {
-                    T elemento = desencolar();
-                    // Notificar que se procesó (usar callback)
-                    System.out.println("Procesado: " + elemento);
-                }
                 try {
-                    Thread.sleep(100); // Revisar cada 100ms
+                    T elemento = null;
+
+                    // Esperar hasta que haya elementos
+                    synchronized (this) {
+                        while (activa && frente == null) {
+                            this.wait();
+                        }
+                        if (!activa) break;
+
+                        // Tomar el elemento
+                        elemento = desencolar();
+                    }
+
+                    // Si tenemos elemento, procesarlo después del tiempo configurado
+                    if (elemento != null) {
+                        // Esperar el tiempo de procesamiento
+                        Thread.sleep(tiempoProcesamiento);
+
+                        // Ejecutar el callback
+                        if (procesador != null) {
+                            procesador.procesar(elemento, tipo);
+                        }
+                    }
+
                 } catch (InterruptedException e) {
+                    // Salir silenciosamente si nos interrumpen
                     break;
+                } catch (Exception e) {
+                    // Capturar cualquier error para que el worker no muera
+                    System.err.println("Error en cola " + tipo + ": " + e.getMessage());
                 }
             }
-        });
+        }, "Cola-Worker-" + tipo);
+
+        hiloProcesamiento.setDaemon(true);
         hiloProcesamiento.start();
     }
 
+    // DETENER PROCESAMIENTO
     public void detenerProcesamiento() {
-        this.activa = false;
+        synchronized (this) {
+            activa = false;
+            this.notify(); // Despertar al worker para que salga
+        }
+    }
+
+    // MÉTODO PARA DEBUG
+    public void mostrarCola() {
+        synchronized (this) {
+            if (frente == null) {
+                System.out.println("Cola " + tipo + " vacía");
+                return;
+            }
+            System.out.print("Cola " + tipo + " (" + tamaño + " elementos): ");
+            Nodo actual = frente;
+            while (actual != null) {
+                System.out.print(actual.dato + " -> ");
+                actual = actual.siguiente;
+            }
+            System.out.println("NULL");
+        }
     }
 }
