@@ -1,6 +1,8 @@
 package org.example.Modelos;
 
 import org.example.Grafo.GrafoBibliotecas;
+import org.example.Grafo.RutaDijkstra;
+
 import java.util.*;
 
 public class CoordinadorEnvios {
@@ -98,10 +100,8 @@ public class CoordinadorEnvios {
 
     // UTILITARIOS
     private List<String> calcularRutaOptima(String origen, String destino, String prioridad) {
-        // luego reemplazar con Dijkstra
-        if (grafo.estanConectadas(origen, destino))
-            return Arrays.asList(origen, destino);
-        return null;
+        RutaDijkstra.Criterio criterio = prioridad.equals("costo") ? RutaDijkstra.Criterio.COSTO : RutaDijkstra.Criterio.TIEMPO;
+        return RutaDijkstra.calcularRuta(grafo, origen, destino, criterio);
     }
 
     private void configurarLibroParaEnvio(Libro libro, String origen, String destino, String prioridad, List<String> ruta) {

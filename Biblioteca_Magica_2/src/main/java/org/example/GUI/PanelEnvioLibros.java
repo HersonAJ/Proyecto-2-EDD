@@ -1,15 +1,18 @@
 package org.example.GUI;
 
 
+import org.example.Grafo.RutaDijkstra;
 import org.example.Modelos.Biblioteca;
 import org.example.Modelos.Libro;
 import org.example.Modelos.CoordinadorEnvios;
 import org.example.Grafo.GrafoBibliotecas;
+import java.util.*;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 public class PanelEnvioLibros extends JPanel {
     private CoordinadorEnvios coordinador;
@@ -199,20 +202,36 @@ public class PanelEnvioLibros extends JPanel {
             String idDestino = destinoCompleto.split(" - ")[0];
             String prioridad = (String) comboPrioridad.getSelectedItem();
 
-            // Aquí se integraría con el método de cálculo de ruta del coordinador
             agregarLog("Calculando ruta de " + idOrigen + " a " + idDestino +
                     " (Prioridad: " + prioridad + ")");
 
-            // Simulación - en implementación real usaría coordinador.calcularRutaOptima()
-            if (grafo.estanConectadas(idOrigen, idDestino)) {
-                agregarLog("Ruta directa: " + idOrigen + " → " + idDestino);
+            // USAR DIJKSTRA REAL
+            RutaDijkstra.Criterio criterio = prioridad.equals("costo")
+                    ? RutaDijkstra.Criterio.COSTO
+                    : RutaDijkstra.Criterio.TIEMPO;
+
+            List<String> ruta = RutaDijkstra.calcularRuta(grafo, idOrigen, idDestino, criterio);
+
+            if (ruta != null && !ruta.isEmpty()) {
+                // Formatear ruta bonita
+                String rutaFormateada = String.join(" → ", ruta);
+                String unidad = (criterio == RutaDijkstra.Criterio.TIEMPO) ? "segundos" : "unidades de costo";
+
+                agregarLog("✅ Ruta óptima por " + prioridad.toLowerCase() + ": " + rutaFormateada);
+
+                // Mostrar detalles de la ruta
+                if (ruta.size() > 2) {
+                    agregarLog("   ↳ Ruta con " + (ruta.size() - 1) + " saltos");
+                } else {
+                    agregarLog("   ↳ Ruta directa");
+                }
             } else {
-                agregarLog("⚠No hay conexión directa. Buscando ruta alternativa...");
-                // Lógica para encontrar ruta intermedia
+                agregarLog("❌ No se encontró ruta posible entre " + idOrigen + " y " + idDestino);
             }
 
         } catch (Exception ex) {
             agregarLog("ERROR al calcular ruta: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 

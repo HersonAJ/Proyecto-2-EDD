@@ -153,27 +153,14 @@ public class LectorCSVLibros {
     }
 
     private void configurarLibroParaEnvio(Libro libro, String origen, String destino, String prioridad) {
-        // Calcular ruta óptima (usando el método simple por ahora)
-        List<String> ruta = calcularRutaSimple(origen, destino);
 
         // Configurar libro para envío
         libro.setIdBibliotecaOrigen(origen);
         libro.setIdBibliotecaDestino(destino);
         libro.setPrioridad(prioridad);
-        libro.setRuta(ruta);
+        libro.setRuta(null);
         libro.setIndiceRutaActual(0);
         libro.setEstado("En tránsito");
-    }
-
-    private List<String> calcularRutaSimple(String origen, String destino) {
-        // Método simple: ruta directa o conexión directa
-        // Esto será reemplazado por Dijkstra después
-        if (grafo.estanConectadas(origen, destino)) {
-            return Arrays.asList(origen, destino);
-        } else {
-            // Por ahora, asumimos conexión directa
-            return Arrays.asList(origen, destino);
-        }
     }
 
     // Clase para resultados de carga
