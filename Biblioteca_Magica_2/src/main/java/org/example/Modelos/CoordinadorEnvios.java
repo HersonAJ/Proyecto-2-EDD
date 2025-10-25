@@ -8,6 +8,7 @@ import java.util.*;
 public class CoordinadorEnvios {
     private GrafoBibliotecas grafo;
     private List<EnvioListener> listeners = new ArrayList<>();
+    private List<Libro> librosEnTransito = new ArrayList<>();
 
     public CoordinadorEnvios(GrafoBibliotecas grafo) {
         this.grafo = grafo;
@@ -30,6 +31,8 @@ public class CoordinadorEnvios {
         // Configurar libro para el envío
         configurarLibroParaEnvio(libro, idOrigen, idDestino, prioridad, ruta);
 
+        notificar("🚀 ENVÍO INICIADO: " + libro.getTitulo() + " en " + idOrigen + " - Cola Ingreso");
+
         // Configurar procesadores de colas de la biblioteca origen (si no están configurados aún)
         configurarProcesadoresBiblioteca(grafo.getBiblioteca(idOrigen));
 
@@ -37,6 +40,7 @@ public class CoordinadorEnvios {
         Biblioteca origen = grafo.getBiblioteca(idOrigen);
         origen.getColaIngreso().encolar(libro);
         System.out.println("📦 Libro '" + libro.getTitulo() + "' encolado en Ingreso de " + idOrigen);
+        librosEnTransito.add(libro);
 
         return true;
     }
@@ -123,4 +127,5 @@ public class CoordinadorEnvios {
             l.onEvento(mensaje);
         }
     }
+    public List<Libro> getLibrosEnTransito() { return new ArrayList<>(librosEnTransito); }
 }

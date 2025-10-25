@@ -1,5 +1,8 @@
 package org.example.Modelos;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Cola<T> {
     private class Nodo {
         T dato;
@@ -119,20 +122,34 @@ public class Cola<T> {
         }
     }
 
-    // Método opcional para debug
-    public void mostrarCola() {
+    //metodos para el monitoreo
+    public int getTamaño() {
         synchronized (this) {
-            if (frente == null) {
-                System.out.println("Cola " + tipo + " vacía");
-                return;
-            }
             int count = 0;
             Nodo actual = frente;
             while (actual != null) {
                 count++;
                 actual = actual.siguiente;
             }
-            System.out.println("Cola " + tipo + " (" + count + " elementos)");
+            return count;
+        }
+    }
+
+    public T frente() {
+        synchronized (this) {
+            return (frente != null) ? frente.dato : null;
+        }
+    }
+
+    public java.util.List<T> obtenerElementos() {
+        synchronized (this) {
+            List<T> elementos = new ArrayList<>();
+            Nodo actual = frente;
+            while (actual != null) {
+                elementos.add(actual.dato);
+                actual = actual.siguiente;
+            }
+            return elementos;
         }
     }
 }

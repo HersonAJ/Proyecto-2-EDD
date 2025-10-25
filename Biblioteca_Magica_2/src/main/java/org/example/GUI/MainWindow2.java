@@ -7,6 +7,7 @@ import org.example.Modelos.*;
 import org.example.Grafo.Arista;
 import org.example.TablaHash.*;
 import org.example.GUI.PanelEnvioLibros;
+import org.example.GUI.PanelTraficoLibros;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -22,8 +23,8 @@ public class MainWindow2 extends JFrame {
     private BibliotecaWindow bibliotecaWindow;
     private CoordinadorEnvios coordinadorEnvios;
     private PanelEnvioLibros panelEnvios;
+    private PanelTraficoLibros  panelTrafico;
 
-    private LectorCSV lectorLibros;//cambiar al nuevo global
 
     public MainWindow2() {
         super("Sistema de Red de Bibliotecas Mágicas");
@@ -32,6 +33,7 @@ public class MainWindow2 extends JFrame {
 
         this.grafo = new GrafoBibliotecas();
         this.coordinadorEnvios = new CoordinadorEnvios(grafo);
+        this.panelTrafico = new PanelTraficoLibros(coordinadorEnvios);
 
         initComponents();
         createMenu();
@@ -55,6 +57,8 @@ public class MainWindow2 extends JFrame {
 
         JPanel panelEnvios = crearPanelEnvios();
         tabs.addTab("Envio entre bibiliotecas", panelEnvios);
+
+        tabs.addTab("Trafico",  panelTrafico);
 
         setContentPane(tabs);
     }
