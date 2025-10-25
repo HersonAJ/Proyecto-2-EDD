@@ -35,7 +35,7 @@ public class ListadoAlfabetico extends JPanel {
 
     private void configurarTabla() {
         // Modelo de tabla
-        String[] headers = {"No.", "Título", "Autor", "ISBN", "Género", "Fecha", "Ejemplares"};
+        String[] headers = {"No.", "Título", "Autor", "ISBN", "Género", "Fecha", "Estado", "Ejemplares"};
         DefaultTableModel model = new DefaultTableModel(headers, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -112,6 +112,7 @@ public class ListadoAlfabetico extends JPanel {
                     libro.getIsbn(),
                     libro.getGenero(),
                     libro.getFecha(),
+                    libro.getEstado(),
                     libro.getCantidad()
             });
             fila++;

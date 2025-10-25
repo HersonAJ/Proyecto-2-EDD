@@ -1,8 +1,5 @@
 digraph Arbol {
     rankdir=TB;
     node [shape=record, style=filled, fillcolor=lightyellow, fontname="Arial", fontsize=10];
-    n1177083153 [label="<L> | Patria | <R>"];
-    n895813235 [label="<L> | Los Pacientes del Doctor García | <R>"];
-    n1177083153:L -> n895813235;
-    n895813235 [label="<L> | Los Pacientes del Doctor García | <R>"];
+    n929813005 [label="<L> | Don Juan Tenorio | <R>"];
 }

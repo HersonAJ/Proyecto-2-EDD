@@ -1,5 +1,6 @@
 package org.example.Modelos;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Libro {
@@ -20,16 +21,29 @@ public class Libro {
     private int indiceRutaActual;
 
     //constructor vacio
-    public Libro() { this.titulo = ""; this.isbn = ""; this.genero = ""; this.fecha = ""; this.autor = ""; this.cantidad = 1; }
+    public Libro() {
+        this.titulo = "";
+        this.isbn = "";
+        this.genero = "";
+        this.fecha = "";
+        this.autor = "";
+        this.cantidad = 1;
+        this.estado = "Disponible";
+        this.idBibliotecaOrigen = null;
+        this.idBibliotecaDestino = null;
+        this.prioridad = null;
+        this.ruta = null;
+        this.indiceRutaActual = 0;
+    }
 
     //constructor con parametros
-    public Libro(String ttitulo, String isbn, String genero, String fecha, String autor) {
-        this.titulo = ttitulo;
+    public Libro(String titulo, String isbn, String genero, String fecha, String autor) {
+        this();
+        this.titulo = titulo;
         this.isbn = isbn;
         this.genero = genero;
         this.fecha = fecha;
         this.autor = autor;
-        this.cantidad = 1;
     }
 
     //getters

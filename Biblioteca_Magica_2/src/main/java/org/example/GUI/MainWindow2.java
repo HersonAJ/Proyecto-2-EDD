@@ -229,6 +229,7 @@ public class MainWindow2 extends JFrame {
             appendLog("Proceso de carga de CSV completado", "info");
             actualizarVista();
             actualizarComboBibliotecas(buscarComboBibliotecas());
+            actualizarPanelEnvios();
         }, progresoCallback);
 
         dialog.setVisible(true);

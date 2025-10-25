@@ -45,6 +45,7 @@ public class PanelEnvioLibros extends JPanel {
         // Bibliotecas Origen
         panelFormulario.add(new JLabel("Biblioteca Origen:"));
         comboBibliotecasOrigen = new JComboBox<>();
+        comboBibliotecasOrigen.addActionListener(e -> cargarLibrosReales());
         panelFormulario.add(comboBibliotecasOrigen);
 
         // Bibliotecas Destino
@@ -112,6 +113,14 @@ public class PanelEnvioLibros extends JPanel {
     private void cargarLibrosReales() {
         comboLibros.removeAllItems();
 
+        // Obtener la biblioteca origen seleccionada (si hay una)
+        String origenSeleccionado = (String) comboBibliotecasOrigen.getSelectedItem();
+        String idOrigen = null;
+
+        if (origenSeleccionado != null && !origenSeleccionado.isEmpty()) {
+            idOrigen = origenSeleccionado.split(" - ")[0];
+        }
+
         var bibliotecas = grafo.getBibliotecas();
         var iterador = bibliotecas.iteradorValores();
 
@@ -119,6 +128,9 @@ public class PanelEnvioLibros extends JPanel {
 
         while (iterador.tieneSiguiente()) {
             Biblioteca bib = iterador.siguiente();
+            if (idOrigen != null && !bib.getId().equals(idOrigen)) {
+                continue;
+            }
 
             if (bib.getCatalogo() != null && !bib.getCatalogo().estaVacio()) {
                 for (var libro : bib.getCatalogo().obtenerTodosLosLibros()) {
@@ -129,7 +141,11 @@ public class PanelEnvioLibros extends JPanel {
         }
 
         if (!hayLibros) {
-            comboLibros.addItem("No hay libros disponibles en ninguna biblioteca");
+            if (idOrigen != null) {
+                comboLibros.addItem("No hay libros disponibles en " + idOrigen);
+            } else {
+                comboLibros.addItem("Seleccione una biblioteca origen primero");
+            }
         }
     }
 
@@ -157,7 +173,7 @@ public class PanelEnvioLibros extends JPanel {
             }
 
             String libroSeleccionado = (String) comboLibros.getSelectedItem();
-            Libro libro = crearLibroDesdeSeleccion(libroSeleccionado);
+            Libro libro = obtenerLibroRealDesdeSeleccion(libroSeleccionado, idOrigen);
 
             String prioridad = (String) comboPrioridad.getSelectedItem();
 
@@ -235,20 +251,28 @@ public class PanelEnvioLibros extends JPanel {
         }
     }
 
-    private Libro crearLibroDesdeSeleccion(String seleccion) {
+    private Libro obtenerLibroRealDesdeSeleccion(String seleccion, String idBibliotecaOrigen) {
         String[] partes = seleccion.split(" - ");
-        String titulo = partes[0];
-        String isbn = partes[1];
+        String tituloBuscado = partes[0];
+        String isbnBuscado = partes[1].split(" ")[0];
 
-        Libro libro = new Libro();
-        libro.setTitulo(titulo);
-        libro.setIsbn(isbn);
-        libro.setAutor("Autor Ejemplo");
-        libro.setGenero("Genero Ejemplo");
-        libro.setFecha("2000");
-        libro.setCantidad(1);
+        System.out.println("🔍 Buscando libro: '" + tituloBuscado + "' en biblioteca " + idBibliotecaOrigen);
 
-        return libro;
+        // Buscar específicamente en la biblioteca origen
+        Biblioteca bibliotecaOrigen = grafo.getBiblioteca(idBibliotecaOrigen);
+
+        if (bibliotecaOrigen != null && bibliotecaOrigen.getCatalogo() != null) {
+            for (Libro libro : bibliotecaOrigen.getCatalogo().obtenerTodosLosLibros()) {
+                if (libro.getTitulo().equals(tituloBuscado) &&
+                        libro.getIsbn().equals(isbnBuscado)) {
+                    System.out.println("✅ Libro REAL encontrado en origen");
+                    return libro;
+                }
+            }
+        }
+
+        throw new RuntimeException("No se encontró el libro '" + tituloBuscado + "' en la biblioteca " + idBibliotecaOrigen +
+                ". El libro puede haber sido movido o eliminado.");
     }
 
     private void agregarLog(String mensaje) {
