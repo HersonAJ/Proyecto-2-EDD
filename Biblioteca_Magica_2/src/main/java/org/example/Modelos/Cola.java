@@ -152,4 +152,12 @@ public class Cola<T> {
             return elementos;
         }
     }
+
+    //metodo necesario para la configuracion manual de las bilbiotecas
+    public void setTiempoProcesamiento(int tiempoProcesamiento) {
+        if (tiempoProcesamiento < 500) {
+            throw new IllegalArgumentException("El tiempo de procesamiento es muy corto, ingrese un tiempo mas prudente");
+        }
+        this.tiempoProcesamiento = tiempoProcesamiento;
+    }
 }

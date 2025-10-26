@@ -8,6 +8,7 @@ import org.example.Grafo.Arista;
 import org.example.TablaHash.*;
 import org.example.GUI.PanelEnvioLibros;
 import org.example.GUI.PanelTraficoLibros;
+import org.example.GUI.ConfiguracionManualBiblioteca;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -24,6 +25,7 @@ public class MainWindow2 extends JFrame {
     private CoordinadorEnvios coordinadorEnvios;
     private PanelEnvioLibros panelEnvios;
     private PanelTraficoLibros  panelTrafico;
+    private ConfiguracionManualBiblioteca configuracionManualBiblioteca;
 
 
     public MainWindow2() {
@@ -34,6 +36,7 @@ public class MainWindow2 extends JFrame {
         this.grafo = new GrafoBibliotecas();
         this.coordinadorEnvios = new CoordinadorEnvios(grafo);
         this.panelTrafico = new PanelTraficoLibros(coordinadorEnvios);
+        this.configuracionManualBiblioteca = new ConfiguracionManualBiblioteca(grafo);
 
         initComponents();
         createMenu();
@@ -59,6 +62,8 @@ public class MainWindow2 extends JFrame {
         tabs.addTab("Envio entre bibiliotecas", panelEnvios);
 
         tabs.addTab("Trafico",  panelTrafico);
+
+        tabs.addTab("Configuraciones" ,  configuracionManualBiblioteca);
 
         setContentPane(tabs);
     }
@@ -230,6 +235,7 @@ public class MainWindow2 extends JFrame {
             actualizarVista();
             actualizarComboBibliotecas(buscarComboBibliotecas());
             actualizarPanelEnvios();
+            actualizarPanelConfiguracion();
         }, progresoCallback);
 
         dialog.setVisible(true);
@@ -279,6 +285,7 @@ public class MainWindow2 extends JFrame {
         dialog.setVisible(true);
         actualizarComboBibliotecas(buscarComboBibliotecas());
         actualizarPanelEnvios();
+        actualizarPanelConfiguracion();
     }
 
 
@@ -415,6 +422,11 @@ public class MainWindow2 extends JFrame {
     private void actualizarPanelEnvios() {
         if (panelEnvios != null) {
             panelEnvios.actualizarDatos();
+        }
+    }
+    private void actualizarPanelConfiguracion() {
+        if (configuracionManualBiblioteca != null) {
+            configuracionManualBiblioteca.actualizarBibliotecas();
         }
     }
 }
