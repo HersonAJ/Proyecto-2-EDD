@@ -9,6 +9,7 @@ import org.example.TablaHash.*;
 import org.example.GUI.PanelEnvioLibros;
 import org.example.GUI.PanelTraficoLibros;
 import org.example.GUI.ConfiguracionManualBiblioteca;
+import org.example.GUI.PanelInfoRed;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -26,6 +27,7 @@ public class MainWindow2 extends JFrame {
     private PanelEnvioLibros panelEnvios;
     private PanelTraficoLibros  panelTrafico;
     private ConfiguracionManualBiblioteca configuracionManualBiblioteca;
+    private PanelInfoRed panelInfoRed;
 
 
     public MainWindow2() {
@@ -37,6 +39,7 @@ public class MainWindow2 extends JFrame {
         this.coordinadorEnvios = new CoordinadorEnvios(grafo);
         this.panelTrafico = new PanelTraficoLibros(coordinadorEnvios);
         this.configuracionManualBiblioteca = new ConfiguracionManualBiblioteca(grafo);
+        this.panelInfoRed = new PanelInfoRed(grafo);
 
         initComponents();
         createMenu();
@@ -52,8 +55,7 @@ public class MainWindow2 extends JFrame {
         tabs.addTab("Log del Sistema", new JScrollPane(logWidget));
 
         // Panel de información del grafo
-        JPanel panelInfo = crearPanelInformacion();
-        tabs.addTab("Información de la Red", panelInfo);
+        tabs.addTab("Información de la Red", panelInfoRed);
 
         JPanel panelBibliotecaIndividual = crearPanelBibliotecaIndividual();
         tabs.addTab("Biblioteca Individual", panelBibliotecaIndividual);
@@ -78,35 +80,6 @@ public class MainWindow2 extends JFrame {
         return panel;
     }
 
-    private JPanel crearPanelInformacion() {
-        JPanel panel = new JPanel(new BorderLayout());
-
-        JTextArea textArea = new JTextArea();
-        textArea.setEditable(false);
-        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-
-        JButton btnActualizar = new JButton("Actualizar Información");
-        btnActualizar.addActionListener(e -> {
-            textArea.setText(obtenerInformacionRed());
-        });
-
-        JButton btnVisualizarGrafo = new JButton("Visualizar Grafo");
-        btnVisualizarGrafo.addActionListener(e -> {
-            abrirVisualizacionGrafo();
-        });
-
-        JPanel panelBotones = new JPanel();
-        panelBotones.add(btnActualizar);
-        panelBotones.add(btnVisualizarGrafo);
-
-        panel.add(panelBotones, BorderLayout.NORTH);
-        panel.add(new JScrollPane(textArea), BorderLayout.CENTER);
-
-        // Cargar información inicial
-        textArea.setText(obtenerInformacionRed());
-
-        return panel;
-    }
     private JPanel crearPanelBibliotecaIndividual() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -355,8 +328,9 @@ public class MainWindow2 extends JFrame {
     }
 
     private void actualizarVista() {
-        // Actualizar la pestaña de información
-        tabs.setComponentAt(1, crearPanelInformacion());
+        if (panelInfoRed != null) {
+            panelInfoRed.actualizarVista();
+        }
     }
 
     private void appendLog(String mensaje, String tipo) {
