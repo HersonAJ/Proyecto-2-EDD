@@ -1,5 +1,6 @@
 package org.example.GUI;
 
+import org.example.Grafo.Arista;
 import org.example.Grafo.GrafoBibliotecas;
 import org.example.Modelos.Biblioteca;
 
@@ -7,6 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 public class ConfiguracionManualBiblioteca extends JPanel {
     private GrafoBibliotecas grafo;
@@ -19,6 +21,7 @@ public class ConfiguracionManualBiblioteca extends JPanel {
     private JButton btnGuardar;
     private JButton btnRestablecer;
     private JLabel lblEstado;
+    private JButton btnGestionarConexiones;
 
     private Biblioteca bibliotecaActual;
     private boolean hayCambios = false;
@@ -130,7 +133,117 @@ public class ConfiguracionManualBiblioteca extends JPanel {
         btnGuardar.addActionListener(e -> guardarCambios());
         btnRestablecer.addActionListener(e -> restablecerCampos());
 
+        btnGestionarConexiones = new JButton("🔗 Gestionar Conexiones");
+        btnGestionarConexiones.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnGestionarConexiones.setFocusable(false);
+        btnGestionarConexiones.addActionListener(e -> gestionarConexiones());
+        panelSuperior.add(btnGestionarConexiones);
+
         setCamposHabilitados(false);
+    }
+
+
+    private void gestionarConexiones() {
+        if (bibliotecaActual == null) {
+            cargarConfiguracionActual();
+            if (bibliotecaActual == null) return;
+        }
+
+        // Obtener conexiones actuales
+        java.util.List<Arista> conexiones = grafo.getConexionesSalientesList(bibliotecaActual.getId());
+
+        if (conexiones.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "La biblioteca " + bibliotecaActual.getNombre() + " no tiene conexiones salientes.",
+                    "Sin Conexiones",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Crear diálogo de gestión de conexiones
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
+                "Gestionar Conexiones - " + bibliotecaActual.getNombre(), true);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(500, 400);
+        dialog.setLocationRelativeTo(this);
+
+        // Panel de conexiones con checkboxes
+        JPanel panelConexiones = new JPanel(new BorderLayout());
+        panelConexiones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel lblInfo = new JLabel("Seleccione las conexiones a eliminar:");
+        panelConexiones.add(lblInfo, BorderLayout.NORTH);
+
+        // Lista de conexiones con checkboxes
+        JPanel panelLista = new JPanel(new GridLayout(0, 1, 5, 5));
+        JScrollPane scrollPane = new JScrollPane(panelLista);
+        scrollPane.setPreferredSize(new Dimension(450, 250));
+
+        java.util.List<JCheckBox> checkboxes = new ArrayList<>();
+
+        for (Arista conexion : conexiones) {
+            JCheckBox checkBox = new JCheckBox(
+                    String.format("%s → %s [Tiempo: %ds, Costo: %.1f]",
+                            conexion.getIdOrigen(),
+                            conexion.getIdDestino(),
+                            conexion.getTiempo(),
+                            conexion.getCosto())
+            );
+            checkboxes.add(checkBox);
+            panelLista.add(checkBox);
+        }
+
+        panelConexiones.add(scrollPane, BorderLayout.CENTER);
+
+        // Panel de botones
+        JPanel panelBotones = new JPanel(new FlowLayout());
+        JButton btnEliminar = new JButton("🗑️ Eliminar Seleccionadas");
+        JButton btnCancelar = new JButton("Cancelar");
+
+        btnEliminar.addActionListener(e -> {
+            eliminarConexionesSeleccionadas(checkboxes, dialog);
+        });
+
+        btnCancelar.addActionListener(e -> dialog.dispose());
+
+        panelBotones.add(btnEliminar);
+        panelBotones.add(btnCancelar);
+
+        // Agregar componentes al diálogo
+        dialog.add(panelConexiones, BorderLayout.CENTER);
+        dialog.add(panelBotones, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
+    }
+
+    private void eliminarConexionesSeleccionadas(java.util.List<JCheckBox> checkboxes, JDialog dialog) {
+        int eliminadas = 0;
+
+        for (JCheckBox checkBox : checkboxes) {
+            if (checkBox.isSelected()) {
+                // Extraer ID destino del texto del checkbox
+                String texto = checkBox.getText();
+                String idDestino = texto.split(" → ")[1].split(" ")[0];
+
+                if (grafo.eliminarConexion(bibliotecaActual.getId(), idDestino)) {
+                    eliminadas++;
+                }
+            }
+        }
+
+        if (eliminadas > 0) {
+            JOptionPane.showMessageDialog(dialog,
+                    "Se eliminaron " + eliminadas + " conexiones exitosamente.",
+                    "Conexiones Eliminadas",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(dialog,
+                    "No se seleccionaron conexiones para eliminar.",
+                    "Sin Cambios",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        dialog.dispose();
     }
 
     private JTextField crearCampoTiempo() {

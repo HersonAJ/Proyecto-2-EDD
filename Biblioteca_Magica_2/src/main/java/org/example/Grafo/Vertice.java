@@ -32,4 +32,26 @@ public class Vertice {
     public String toString() {
         return "Vertice: " + biblioteca.getId() + " [Conexiones: " + conexionesSalientes.getTamaño() + "]";
     }
+
+    public boolean eliminarConexion(String idDestino) {
+        ListaAdyacencia conexiones = getConexionesSalientes();
+        ListaAdyacencia nuevasConexiones = new ListaAdyacencia();
+        boolean encontrada = false;
+
+        ListaAdyacencia.IteradorLista iterador = conexiones.iterador();
+        while (iterador.tieneSiguiente()) {
+            Arista arista = iterador.siguiente();
+            if (!arista.getIdDestino().equals(idDestino)) {
+                nuevasConexiones.agregar(arista);
+            } else {
+                encontrada = true;
+            }
+        }
+
+        if (encontrada) {
+            this.conexionesSalientes = nuevasConexiones;
+        }
+
+        return encontrada;
+    }
 }

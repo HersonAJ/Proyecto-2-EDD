@@ -3,6 +3,9 @@ package org.example.Grafo;
 import org.example.Modelos.Biblioteca;
 import org.example.TablaHash.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class GrafoBibliotecas {
     private TablaHash<String, Vertice> vertices;
 
@@ -121,5 +124,27 @@ public class GrafoBibliotecas {
                 "vertices=" + vertices.size() +
                 ", aristas=" + getTodasLasAristas().getTamaño() +
                 '}';
+    }
+
+    //metodos para la eliminacion de conexiones
+    public boolean eliminarConexion(String idOrigen, String idDestino) {
+        if (!existeBiblioteca(idOrigen)) {
+            return false;
+        }
+        Vertice origen = vertices.get(idOrigen);
+        return origen.eliminarConexion(idDestino);
+    }
+    public List<Arista> getConexionesSalientesList(String idBiblioteca) {
+        List<Arista> conexiones = new ArrayList<>();
+        Vertice vertice = vertices.get(idBiblioteca);
+
+        if (vertice != null) {
+            ListaAdyacencia.IteradorLista iterador = vertice.getConexionesSalientes().iterador();
+            while (iterador.tieneSiguiente()) {
+                conexiones.add(iterador.siguiente());
+            }
+        }
+
+        return conexiones;
     }
 }
