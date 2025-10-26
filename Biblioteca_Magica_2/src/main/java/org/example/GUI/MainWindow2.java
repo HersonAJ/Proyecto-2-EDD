@@ -39,7 +39,7 @@ public class MainWindow2 extends JFrame {
         this.coordinadorEnvios = new CoordinadorEnvios(grafo);
         this.panelTrafico = new PanelTraficoLibros(coordinadorEnvios);
         this.configuracionManualBiblioteca = new ConfiguracionManualBiblioteca(grafo);
-        this.panelInfoRed = new PanelInfoRed(grafo);
+        this.panelInfoRed = new PanelInfoRed(grafo, this);
 
         initComponents();
         createMenu();
@@ -181,10 +181,6 @@ public class MainWindow2 extends JFrame {
         // Menú Visualización
         JMenu menuVisualizacion = new JMenu("Visualización");
 
-        JMenuItem verGrafo = new JMenuItem("Ver Grafo de Bibliotecas");
-        verGrafo.addActionListener(e -> abrirVisualizacionGrafo());
-        menuVisualizacion.add(verGrafo);
-
         // Agregar menús
         menuBar.add(menuArchivo);
         menuBar.add(menuGestion);
@@ -285,11 +281,6 @@ public class MainWindow2 extends JFrame {
         );
         dialog.setVisible(true);
         actualizarPanelEnvios();
-    }
-
-    private void abrirVisualizacionGrafo() {
-        MainWindowGrafo ventanaGrafo = new MainWindowGrafo(grafo);
-        ventanaGrafo.setVisible(true);
     }
 
     private String obtenerInformacionRed() {
@@ -402,5 +393,17 @@ public class MainWindow2 extends JFrame {
         if (configuracionManualBiblioteca != null) {
             configuracionManualBiblioteca.actualizarBibliotecas();
         }
+    }
+    public void actualizarTodosLosPaneles() {
+        if (panelInfoRed != null) {
+            panelInfoRed.actualizarVista();
+        }
+        if (panelEnvios != null) {
+            panelEnvios.actualizarDatos();
+        }
+        if (configuracionManualBiblioteca != null) {
+            configuracionManualBiblioteca.actualizarBibliotecas();
+        }
+        actualizarComboBibliotecas(buscarComboBibliotecas());
     }
 }

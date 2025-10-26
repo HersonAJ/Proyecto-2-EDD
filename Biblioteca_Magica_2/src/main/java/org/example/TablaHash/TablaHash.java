@@ -196,4 +196,29 @@ public class TablaHash<K, V> {
             }
         };
     }
+
+    public boolean remove(K clave) {
+        if (clave == null) return false;
+
+        int indice = has(clave);
+        Entrada<K, V> actual = tabla[indice];
+        Entrada<K, V> anterior = null;
+
+        while (actual != null) {
+            if (actual.clave.equals(clave)) {
+                if (anterior == null) {
+                    // Es el primer elemento de la lista
+                    tabla[indice] = actual.siguiente;
+                } else {
+                    // Es un elemento intermedio o final
+                    anterior.siguiente = actual.siguiente;
+                }
+                tamaño--;
+                return true;
+            }
+            anterior = actual;
+            actual = actual.siguiente;
+        }
+        return false;
+    }
 }

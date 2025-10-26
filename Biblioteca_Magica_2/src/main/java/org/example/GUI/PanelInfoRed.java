@@ -5,6 +5,7 @@ import org.example.Modelos.Biblioteca;
 import org.example.Grafo.Arista;
 import org.example.Grafo.ListaAdyacencia;
 import org.example.TablaHash.Iterador;
+import org.example.GUI.MainWindow2;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,9 +13,11 @@ import java.awt.*;
 public class PanelInfoRed extends JPanel {
     private GrafoBibliotecas grafo;
     private JTextArea textArea;
+    private MainWindow2 mainWindow;
 
-    public PanelInfoRed(GrafoBibliotecas grafo) {
+    public PanelInfoRed(GrafoBibliotecas grafo, MainWindow2 mainWindow) {
         this.grafo = grafo;
+        this.mainWindow = mainWindow;
         initComponents();
     }
 
@@ -30,12 +33,10 @@ public class PanelInfoRed extends JPanel {
 
         JButton btnVisualizarGrafo = new JButton("Visualizar Grafo");
         btnVisualizarGrafo.addActionListener(e -> {
-            // ✅ INSTANCIAR DIRECTAMENTE
             MainWindowGrafo ventanaGrafo = new MainWindowGrafo(grafo);
             ventanaGrafo.setVisible(true);
         });
 
-        // ✅ Botón para eliminar biblioteca
         JButton btnEliminarBiblioteca = new JButton("🗑️ Eliminar Biblioteca");
         btnEliminarBiblioteca.addActionListener(e -> eliminarBiblioteca());
 
@@ -47,7 +48,6 @@ public class PanelInfoRed extends JPanel {
         add(panelBotones, BorderLayout.NORTH);
         add(new JScrollPane(textArea), BorderLayout.CENTER);
 
-        // Cargar información inicial
         actualizarInformacion();
     }
 
@@ -90,16 +90,103 @@ public class PanelInfoRed extends JPanel {
         return sb.toString();
     }
 
-    private void eliminarBiblioteca() {
-        // ✅ Esto lo implementaremos en el siguiente paso
-        JOptionPane.showMessageDialog(this,
-                "Funcionalidad de eliminación por implementar",
-                "En Desarrollo",
-                JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    // Método para que MainWindow pueda actualizar este panel
     public void actualizarVista() {
         actualizarInformacion();
+    }
+
+    private void eliminarBiblioteca() {
+        if (grafo.getBibliotecas().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No hay bibliotecas disponibles para eliminar.",
+                    "Sin Bibliotecas",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Obtener lista de bibliotecas para mostrar
+        String[] opcionesBibliotecas = obtenerListaBibliotecas();
+
+        String seleccion = (String) JOptionPane.showInputDialog(this,
+                "Seleccione la biblioteca a eliminar:",
+                "Eliminar Biblioteca",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                opcionesBibliotecas,
+                opcionesBibliotecas[0]);
+
+        if (seleccion != null && !seleccion.isEmpty()) {
+            // Extraer ID de la selección (formato: "ID - Nombre (Ubicación)")
+            String idBiblioteca = seleccion.split(" - ")[0];
+
+            // Confirmación de eliminación
+            int confirmacion = JOptionPane.showConfirmDialog(this,
+                    "¿Está seguro de eliminar la biblioteca '" + seleccion + "'?\n" +
+                            "Esta acción eliminará:\n" +
+                            "• La biblioteca y todos sus libros\n" +
+                            "• Todas sus conexiones de red\n" +
+                            "• No se puede deshacer",
+                    "Confirmar Eliminación",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                eliminarBibliotecaCompleta(idBiblioteca);
+            }
+        }
+    }
+
+    private String[] obtenerListaBibliotecas() {
+        var bibliotecas = grafo.getBibliotecas();
+        String[] lista = new String[bibliotecas.size()];
+        Iterador<Biblioteca> iterador = bibliotecas.iteradorValores();
+
+        int i = 0;
+        while (iterador.tieneSiguiente()) {
+            Biblioteca bib = iterador.siguiente();
+            lista[i++] = bib.getId() + " - " + bib.getNombre() + " (" + bib.getUbicacion() + ")";
+        }
+
+        return lista;
+    }
+
+    private void eliminarBibliotecaCompleta(String idBiblioteca) {
+        try {
+            // 1. Detener todas las colas de la biblioteca
+            Biblioteca biblioteca = grafo.getBiblioteca(idBiblioteca);
+            if (biblioteca != null) {
+                biblioteca.getColaIngreso().detenerProcesamiento();
+                biblioteca.getColaTraspaso().detenerProcesamiento();
+                biblioteca.getColaSalida().detenerProcesamiento();
+            }
+
+            // 2. Eliminar del grafo (esto debe eliminar también las conexiones)
+            boolean eliminado = grafo.eliminarBiblioteca(idBiblioteca);
+
+            if (eliminado) {
+                // 3. Actualizar interfaz
+                actualizarInformacion();
+
+                // 4. Notificar a MainWindow para actualizar otros panels
+                if (mainWindow != null) {
+                    mainWindow.actualizarTodosLosPaneles();
+                }
+
+                JOptionPane.showMessageDialog(this,
+                        "Biblioteca '" + idBiblioteca + "' eliminada exitosamente.",
+                        "Eliminación Completada",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "No se pudo eliminar la biblioteca '" + idBiblioteca + "'.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al eliminar biblioteca: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

@@ -54,4 +54,8 @@ public class Vertice {
 
         return encontrada;
     }
+
+    public void setConexionesSalientes(ListaAdyacencia conexiones) {
+        this.conexionesSalientes = conexiones;
+    }
 }

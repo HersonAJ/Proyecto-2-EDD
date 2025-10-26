@@ -147,4 +147,45 @@ public class GrafoBibliotecas {
 
         return conexiones;
     }
+
+    public boolean eliminarBiblioteca(String idBiblioteca) {
+        if (!existeBiblioteca(idBiblioteca)) {
+            return false;
+        }
+
+        // 1. Eliminar todas las conexiones SALIENTES de esta biblioteca
+        Vertice verticeAEliminar = vertices.get(idBiblioteca);
+        if (verticeAEliminar != null) {
+            // Limpiar conexiones salientes - crear nueva lista vacía
+            verticeAEliminar.setConexionesSalientes(new ListaAdyacencia());
+        }
+
+        // 2. Eliminar todas las conexiones ENTRANTES a esta biblioteca
+        Iterador<Vertice> iterador = vertices.iteradorValores();
+        while (iterador.tieneSiguiente()) {
+            Vertice vertice = iterador.siguiente();
+            if (!vertice.getId().equals(idBiblioteca)) {
+                // Eliminar conexiones que apuntan a la biblioteca a eliminar
+                eliminarConexionesHacia(vertice, idBiblioteca);
+            }
+        }
+
+        // 3. Eliminar el vértice del grafo
+        vertices.remove(idBiblioteca);
+        return true;
+    }
+
+    private void eliminarConexionesHacia(Vertice vertice, String idDestino) {
+        ListaAdyacencia nuevasConexiones = new ListaAdyacencia();
+        ListaAdyacencia.IteradorLista iterador = vertice.getConexionesSalientes().iterador();
+
+        while (iterador.tieneSiguiente()) {
+            Arista arista = iterador.siguiente();
+            if (!arista.getIdDestino().equals(idDestino)) {
+                nuevasConexiones.agregar(arista);
+            }
+        }
+        // Reemplazar la lista de conexiones
+        vertice.setConexionesSalientes(nuevasConexiones);
+    }
 }
