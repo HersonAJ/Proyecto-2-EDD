@@ -88,13 +88,13 @@ public class RutaDijkstra {
 
         // Verificar que la ruta comienza en el origen
         if (ruta.isEmpty() || !ruta.get(0).equals(origen)) {
-            System.err.println("❌ Dijkstra: No hay camino de " + origen + " a " + destino);
+            System.err.println("Dijkstra: No hay camino de " + origen + " a " + destino);
             return null;
         }
 
         // Mensaje informativo
         String unidad = (criterio == Criterio.TIEMPO) ? "segundos" : "unidades de costo";
-        System.out.println("✅ Dijkstra: Ruta por " + criterio + " " + ruta + " (" + unidad + ")");
+        System.out.println("Dijkstra: Ruta por " + criterio + " " + ruta + " (" + unidad + ")");
         return ruta;
     }
 
