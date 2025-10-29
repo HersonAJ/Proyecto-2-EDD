@@ -60,7 +60,7 @@ public class PanelInfoRed extends JPanel {
         sb.append("=== SISTEMA DE BIBLIOTECAS MÁGICAS ===\n\n");
 
         sb.append("RESUMEN:\n");
-        sb.append("• Bibliotecas: ").append(grafo.getBibliotecas().size()).append("\n");
+        sb.append("• Bibliotecas: ").append(grafo.getBibliotecas().tamano()).append("\n");
         sb.append("• Conexiones: ").append(grafo.getTodasLasAristas().getTamaño()).append("\n\n");
 
         sb.append("BIBLIOTECAS:\n");
@@ -95,7 +95,7 @@ public class PanelInfoRed extends JPanel {
     }
 
     private void eliminarBiblioteca() {
-        if (grafo.getBibliotecas().isEmpty()) {
+        if (grafo.getBibliotecas().estaVacia()) {
             JOptionPane.showMessageDialog(this,
                     "No hay bibliotecas disponibles para eliminar.",
                     "Sin Bibliotecas",
@@ -137,7 +137,7 @@ public class PanelInfoRed extends JPanel {
 
     private String[] obtenerListaBibliotecas() {
         var bibliotecas = grafo.getBibliotecas();
-        String[] lista = new String[bibliotecas.size()];
+        String[] lista = new String[bibliotecas.tamano()];
         Iterador<Biblioteca> iterador = bibliotecas.iteradorValores();
 
         int i = 0;

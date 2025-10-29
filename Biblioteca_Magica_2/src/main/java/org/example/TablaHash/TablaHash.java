@@ -8,7 +8,8 @@ public class TablaHash<K, V> {
     private int tamaño;
     private int capacidad;
 
-    //clase interna para las entradas
+    // Clase interna para las entradas de la tabla
+    //tambien lista enlazada interna para colisiones
     private static class Entrada<K, V> {
         K clave;
         V valor;
@@ -28,28 +29,39 @@ public class TablaHash<K, V> {
         this.tamaño = 0;
     }
 
-    private int has(K clave) {
-        return Math.abs(clave.hashCode()) % capacidad;
+    // Calcula el índice hash para una clave
+    private int calcularHash(K clave) {
+        //implementacion manual
+        String claveStr = clave.toString(); //por si no lo fuera ya que la tabla es generica
+        int primo = 31; //mencion en clase de que funciona mejor con numeros primos
+        int hash = 0;
+
+        for (int i = 0; i < claveStr.length(); i++) {
+            hash = (primo * hash) + claveStr.charAt(i); //calculo polinomial por cada caracter y el resultado se suma a la siguiente iteracion
+        }
+
+        //se asegura que sea un entero positivo dentro de los limites de la tabla
+        return (hash & 0x7FFFFFFF) % capacidad;
     }
 
-    public void put(K clave, V valor) {
+    // Inserta o actualiza un valor en la tabla
+    public void insertar(K clave, V valor) {
         if (clave == null) return;
-        int indiceOriginal = has(clave);
 
-        //redimensionar si es necesario
+        // Redimensionar si se supera el factor de carga
         if ((double)tamaño / capacidad >= FACTOR_CARGA) {
             redimensionar();
         }
 
-        int indice = has(clave);
+        int indice = calcularHash(clave);
         Entrada<K, V> nuevaEntrada = new Entrada<>(clave, valor);
 
-        //si no hay colision
+        // Si no hay colisión en este índice
         if (tabla[indice] == null) {
             tabla[indice] = nuevaEntrada;
-        } else  {
-            //manejar colision con lista enlazada
-            Entrada<K, V>  actual = tabla[indice];
+        } else {
+            // Manejar colisión con lista enlazada
+            Entrada<K, V> actual = tabla[indice];
             while (actual.siguiente != null) {
                 if (actual.clave.equals(clave)) {
                     actual.valor = valor; // Actualizar valor existente
@@ -67,12 +79,14 @@ public class TablaHash<K, V> {
         tamaño++;
     }
 
-    public V get(K clave) {
-        if (clave == null) return  null;
+    // Obtiene un valor por su clave
+    public V obtener(K clave) {
+        if (clave == null) return null;
 
-        int indice = has(clave);
+        int indice = calcularHash(clave);
         Entrada<K, V> actual = tabla[indice];
 
+        // Buscar en la lista enlazada
         while (actual != null) {
             if (actual.clave.equals(clave)) {
                 return actual.valor;
@@ -82,27 +96,30 @@ public class TablaHash<K, V> {
         return null;
     }
 
-    public boolean containsKey(K clave) {
-        return get(clave) != null;
+    // Verifica si una clave existe en la tabla
+    public boolean contieneClave(K clave) {
+        return obtener(clave) != null;
     }
 
-    public int size() {
+    // Retorna el número de elementos
+    public int tamano() {
         return tamaño;
     }
 
-    public boolean isEmpty() {
+    // Verifica si la tabla está vacía
+    public boolean estaVacia() {
         return tamaño == 0;
     }
 
+    // Duplica el tamaño de la tabla cuando es necesario
     @SuppressWarnings("unchecked")
     private void redimensionar() {
-
         capacidad *= 2;
         Entrada<K, V>[] tablaVieja = tabla;
         tabla = new Entrada[capacidad];
         tamaño = 0;
 
-        // Reinsertar todas las entradas SIN llamar a put() para evitar recursión
+        // Reinsertar todas las entradas con la nueva capacidad
         for (Entrada<K, V> entrada : tablaVieja) {
             Entrada<K, V> actual = entrada;
             while (actual != null) {
@@ -112,9 +129,9 @@ public class TablaHash<K, V> {
         }
     }
 
-    // Método auxiliar para reinsertar sin verificar redimensionamiento
+    // Método auxiliar para reinsertar durante redimensionamiento
     private void reinsertarEntrada(K clave, V valor) {
-        int indice = has(clave);
+        int indice = calcularHash(clave); // Se recalcula con nueva capacidad
         Entrada<K, V> nuevaEntrada = new Entrada<>(clave, valor);
 
         if (tabla[indice] == null) {
@@ -129,7 +146,7 @@ public class TablaHash<K, V> {
         tamaño++;
     }
 
-    // Iterador para valores
+    // Iterador para recorrer todos los valores
     public Iterador<V> iteradorValores() {
         return new Iterador<V>() {
             private int indiceActual = 0;
@@ -163,7 +180,7 @@ public class TablaHash<K, V> {
         };
     }
 
-    // Iterador para claves (opcional)
+    // Iterador para recorrer todas las claves
     public Iterador<K> iteradorClaves() {
         return new Iterador<K>() {
             private int indiceActual = 0;
@@ -197,10 +214,11 @@ public class TablaHash<K, V> {
         };
     }
 
-    public boolean remove(K clave) {
+    // Elimina una entrada por su clave
+    public boolean eliminar(K clave) {
         if (clave == null) return false;
 
-        int indice = has(clave);
+        int indice = calcularHash(clave);
         Entrada<K, V> actual = tabla[indice];
         Entrada<K, V> anterior = null;
 

@@ -228,7 +228,7 @@ public class MainWindowGrafo extends JFrame {
         for (Map.Entry<String, Point> entry : posiciones.entrySet()) {
             String id = entry.getKey();
             Point pos = entry.getValue();
-            Biblioteca bib = bibliotecas.get(id);
+            Biblioteca bib = bibliotecas.obtener(id);
 
             // Nodo con gradiente
             GradientPaint gradient = new GradientPaint(
@@ -270,7 +270,7 @@ public class MainWindowGrafo extends JFrame {
         StringBuilder sb = new StringBuilder();
         sb.append("=== RED DE BIBLIOTECAS ===\n\n");
 
-        sb.append("Bibliotecas (").append(grafo.getBibliotecas().size()).append("):\n");
+        sb.append("Bibliotecas (").append(grafo.getBibliotecas().tamano()).append("):\n");
         TablaHash<String, Biblioteca> bibliotecas = grafo.getBibliotecas();
         Iterador<Biblioteca> iteradorBib = bibliotecas.iteradorValores();
         while (iteradorBib.tieneSiguiente()) {

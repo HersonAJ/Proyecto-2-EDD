@@ -285,6 +285,6 @@ public class PanelEnvioLibros extends JPanel {
     public void actualizarDatos() {
         cargarDatos();
         agregarLog("📚 Datos actualizados - Bibliotecas disponibles: " +
-                grafo.getBibliotecas().size());
+                grafo.getBibliotecas().tamano());
     }
 }

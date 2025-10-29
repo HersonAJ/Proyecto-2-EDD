@@ -27,7 +27,7 @@ public class RutaDijkstra {
         distancias.put(origen, 0.0);
 
         // Dijkstra con arreglos
-        int totalVertices = bibliotecas.size();
+        int totalVertices = bibliotecas.tamano();
 
         for (int i = 0; i < totalVertices; i++) {
             // PASO 2: Elegir vértice con distancia mínima no visitado

@@ -267,7 +267,7 @@ public class MainWindow2 extends JFrame {
         dialog.setVisible(true);
     }
     private void agregarLibroManual() {
-        if (grafo.getBibliotecas().isEmpty()) {
+        if (grafo.getBibliotecas().estaVacia()) {
             appendLog("Error: No hay bibliotecas disponibles. Agrega una biblioteca primero.", "error");
             JOptionPane.showMessageDialog(this,
                     "No hay bibliotecas disponibles. Agrega una biblioteca primero.",
@@ -288,7 +288,7 @@ public class MainWindow2 extends JFrame {
         sb.append("=== SISTEMA DE BIBLIOTECAS MÁGICAS ===\n\n");
 
         sb.append("RESUMEN:\n");
-        sb.append("• Bibliotecas: ").append(grafo.getBibliotecas().size()).append("\n");
+        sb.append("• Bibliotecas: ").append(grafo.getBibliotecas().tamano()).append("\n");
         sb.append("• Conexiones: ").append(grafo.getTodasLasAristas().getTamaño()).append("\n\n");
 
         sb.append("BIBLIOTECAS:\n");
@@ -354,7 +354,7 @@ public class MainWindow2 extends JFrame {
 
     private void actualizarComboBibliotecas(JComboBox<String> combo) {
         combo.removeAllItems();
-        if (grafo.getBibliotecas().isEmpty()) {
+        if (grafo.getBibliotecas().estaVacia()) {
             combo.addItem("(No hay bibliotecas disponibles)");
             combo.setEnabled(false);
             return;

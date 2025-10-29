@@ -23,12 +23,12 @@ public class GrafoBibliotecas {
         }
 
         Biblioteca biblioteca = new Biblioteca(id, nombre, ubicacion, tiempoIngreso, tiempoTraspaso, intervaloDespacho);
-        vertices.put(id, new Vertice(biblioteca));
+        vertices.insertar(id, new Vertice(biblioteca));
         return true; // Se agregó exitosamente
     }
 
     public Biblioteca getBiblioteca(String id) {
-        Vertice vertice = vertices.get(id);
+        Vertice vertice = vertices.obtener(id);
         return (vertice != null) ? vertice.getBiblioteca() : null;
     }
 
@@ -39,14 +39,14 @@ public class GrafoBibliotecas {
         int contador = 0;
         while (iterador.tieneSiguiente()) {
             Vertice vertice = iterador.siguiente();
-            bibliotecas.put(vertice.getId(), vertice.getBiblioteca());
+            bibliotecas.insertar(vertice.getId(), vertice.getBiblioteca());
             contador++;
         }
         return bibliotecas;
     }
 
     public boolean existeBiblioteca(String id) {
-        return vertices.containsKey(id);
+        return vertices.contieneClave(id);
     }
 
     // Métodos para gestionar conexiones
@@ -61,7 +61,7 @@ public class GrafoBibliotecas {
             return false;
         }
 
-        Vertice origen = vertices.get(idOrigen);
+        Vertice origen = vertices.obtener(idOrigen);
         Arista arista = new Arista(idOrigen, idDestino, tiempo, costo);
         origen.agregarConexion(arista);
         return true;
@@ -83,13 +83,13 @@ public class GrafoBibliotecas {
     }
 
     public ListaAdyacencia getConexionesSalientes(String idBiblioteca) {
-        Vertice vertice = vertices.get(idBiblioteca);
+        Vertice vertice = vertices.obtener(idBiblioteca);
         return (vertice != null) ? vertice.getConexionesSalientes() : new ListaAdyacencia();
     }
 
     // Método para verificar conexión entre bibliotecas
     public boolean estanConectadas(String idOrigen, String idDestino) {
-        Vertice origen = vertices.get(idOrigen);
+        Vertice origen = vertices.obtener(idOrigen);
         if (origen == null) return false;
 
         ListaAdyacencia.IteradorLista iterador = origen.getConexionesSalientes().iterador();
@@ -105,7 +105,7 @@ public class GrafoBibliotecas {
     // Método para obtener información del grafo
     public String obtenerInfoGrafo() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Grafo con ").append(vertices.size()).append(" bibliotecas\n");
+        sb.append("Grafo con ").append(vertices.tamano()).append(" bibliotecas\n");
 
         Iterador<Vertice> iterador = vertices.iteradorValores();
         while (iterador.tieneSiguiente()) {
@@ -121,7 +121,7 @@ public class GrafoBibliotecas {
     @Override
     public String toString() {
         return "GrafoBibliotecas{" +
-                "vertices=" + vertices.size() +
+                "vertices=" + vertices.tamano() +
                 ", aristas=" + getTodasLasAristas().getTamaño() +
                 '}';
     }
@@ -131,12 +131,12 @@ public class GrafoBibliotecas {
         if (!existeBiblioteca(idOrigen)) {
             return false;
         }
-        Vertice origen = vertices.get(idOrigen);
+        Vertice origen = vertices.obtener(idOrigen);
         return origen.eliminarConexion(idDestino);
     }
     public List<Arista> getConexionesSalientesList(String idBiblioteca) {
         List<Arista> conexiones = new ArrayList<>();
-        Vertice vertice = vertices.get(idBiblioteca);
+        Vertice vertice = vertices.obtener(idBiblioteca);
 
         if (vertice != null) {
             ListaAdyacencia.IteradorLista iterador = vertice.getConexionesSalientes().iterador();
@@ -154,7 +154,7 @@ public class GrafoBibliotecas {
         }
 
         // 1. Eliminar todas las conexiones SALIENTES de esta biblioteca
-        Vertice verticeAEliminar = vertices.get(idBiblioteca);
+        Vertice verticeAEliminar = vertices.obtener(idBiblioteca);
         if (verticeAEliminar != null) {
             // Limpiar conexiones salientes - crear nueva lista vacía
             verticeAEliminar.setConexionesSalientes(new ListaAdyacencia());
@@ -171,7 +171,7 @@ public class GrafoBibliotecas {
         }
 
         // 3. Eliminar el vértice del grafo
-        vertices.remove(idBiblioteca);
+        vertices.eliminar(idBiblioteca);
         return true;
     }
 
