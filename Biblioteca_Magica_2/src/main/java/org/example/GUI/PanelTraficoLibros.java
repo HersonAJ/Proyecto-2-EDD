@@ -10,13 +10,12 @@ public class PanelTraficoLibros extends JPanel {
     private CoordinadorEnvios coordinador;
     private JTable tablaTrafico;
     private TraficoTableModel tableModel;
-    private Map<String, String> ubicacionesDetalladas = new HashMap<>(); // Mapa: libroId -> ubicación detallada
+    private Map<String, String> ubicacionesDetalladas = new HashMap<>();
 
     public PanelTraficoLibros(CoordinadorEnvios coordinador) {
         this.coordinador = coordinador;
         initComponents();
 
-        // Registrar como listener para actualizaciones en tiempo real
         this.coordinador.agregarListener(mensaje ->
                 SwingUtilities.invokeLater(() -> procesarMensaje(mensaje))
         );
@@ -27,35 +26,28 @@ public class PanelTraficoLibros extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         setBackground(Color.WHITE);
 
-        // Modelo de tabla
         tableModel = new TraficoTableModel();
         tablaTrafico = new JTable(tableModel);
 
-        // Configuración de tabla
         tablaTrafico.setFillsViewportHeight(true);
         tablaTrafico.setRowHeight(28);
         tablaTrafico.setFont(new Font("SansSerif", Font.PLAIN, 13));
         tablaTrafico.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 14));
 
-        // Ajustes de columnas
-        tablaTrafico.getColumnModel().getColumn(0).setPreferredWidth(220); // Libro
-        tablaTrafico.getColumnModel().getColumn(1).setPreferredWidth(200); // Ubicación (más ancha)
-        tablaTrafico.getColumnModel().getColumn(2).setPreferredWidth(160); // Destino
-        tablaTrafico.getColumnModel().getColumn(3).setPreferredWidth(120); // Estado
-        tablaTrafico.getColumnModel().getColumn(4).setPreferredWidth(120); // Tiempo
+        tablaTrafico.getColumnModel().getColumn(0).setPreferredWidth(220);
+        tablaTrafico.getColumnModel().getColumn(1).setPreferredWidth(200);
+        tablaTrafico.getColumnModel().getColumn(2).setPreferredWidth(160);
+        tablaTrafico.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tablaTrafico.getColumnModel().getColumn(4).setPreferredWidth(120);
 
-        // Renderer para colorear filas según el estado
+        // Renderer con colores
         tablaTrafico.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                                                            boolean isSelected, boolean hasFocus, int row, int column) {
-
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-                // Resetea fondo
                 if (!isSelected) c.setBackground(Color.WHITE);
 
-                // Solo colorear la celda de la columna Estado
                 int colEstado = table.getColumnModel().getColumnIndex("Estado");
                 if (column == colEstado && value != null) {
                     String estado = value.toString().toLowerCase();
@@ -66,7 +58,6 @@ public class PanelTraficoLibros extends JPanel {
                     else
                         c.setBackground(Color.WHITE);
                 }
-
                 return c;
             }
         });
@@ -74,7 +65,6 @@ public class PanelTraficoLibros extends JPanel {
         JScrollPane scrollPane = new JScrollPane(tablaTrafico);
         scrollPane.setBorder(BorderFactory.createTitledBorder("📦 Estado actual de los envíos de libros"));
 
-        // Panel inferior con botones
         JPanel panelControles = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
         panelControles.setBackground(Color.WHITE);
 
@@ -95,31 +85,49 @@ public class PanelTraficoLibros extends JPanel {
     }
 
     private void procesarMensaje(String mensaje) {
-        // Solo procesar mensajes que indican movimiento de libros
-        if (mensaje.contains("📥") || mensaje.contains("🚚") || mensaje.contains("🚀") ||
-                mensaje.contains("➡️") || mensaje.contains("📚") ||
-                mensaje.contains("ENVÍO INICIADO") || mensaje.contains("📦 Envío iniciado")) {
+        if (mensaje.contains("pasó a Traspaso") || mensaje.contains("pasó a Salida") ||
+                mensaje.contains("salió de") || mensaje.contains("llegó a destino") ||
+                mensaje.contains("recibido en PRÉSTAMO") || mensaje.contains("ENVÍO INICIADO") ||
+                mensaje.contains("Envío iniciado") || mensaje.contains("PRÉSTAMO INICIADO")) {
 
-            // Extraer información del mensaje
             String ubicacionDetallada = extraerUbicacionDetallada(mensaje);
             String tituloLibro = extraerTituloLibro(mensaje);
+            String isbn = extraerISBN(mensaje);
 
-            if (tituloLibro != null) {
-                if (ubicacionDetallada == null && (mensaje.contains("ENVÍO INICIADO") || mensaje.contains("📦 Envío iniciado"))) {
-                    // Buscar la biblioteca origen en el mensaje
+            if (tituloLibro != null && isbn != null) {
+                String clave = generarClaveEnvio(isbn, mensaje);
+
+                if (ubicacionDetallada == null && mensaje.contains("ENVÍO INICIADO")) {
                     if (mensaje.contains("de ") && mensaje.contains(" a ")) {
                         String parteOrigen = mensaje.substring(mensaje.indexOf("de ") + 3);
-                        String biblioteca = parteOrigen.split(" ")[0]; // Tomar primera palabra después de "de "
+                        String biblioteca = parteOrigen.split(" ")[0];
                         ubicacionDetallada = biblioteca + " - Cola Ingreso";
                     }
                 }
 
                 if (ubicacionDetallada != null) {
-                    ubicacionesDetalladas.put(tituloLibro, ubicacionDetallada);
+                    ubicacionesDetalladas.put(clave, ubicacionDetallada);
                 }
                 tableModel.actualizarDatosCompletos();
             }
         }
+    }
+
+    private String generarClaveEnvio(String isbn, String mensaje) {
+        String destino = "N/A";
+        if (mensaje.contains(" a ")) {
+            destino = mensaje.substring(mensaje.indexOf(" a ") + 3).split(" ")[0];
+        }
+        return isbn + "_" + destino;
+    }
+
+    private String extraerISBN(String mensaje) {
+        if (mensaje.contains("(") && mensaje.contains(")")) {
+            try {
+                return mensaje.substring(mensaje.indexOf("(") + 1, mensaje.indexOf(")"));
+            } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     private String extraerUbicacionDetallada(String mensaje) {
@@ -127,58 +135,36 @@ public class PanelTraficoLibros extends JPanel {
             String biblioteca = mensaje.substring(mensaje.lastIndexOf("en ") + 3);
             return biblioteca.split(" - ")[0] + " - Cola Ingreso";
         }
-        if (mensaje.contains("📥") && mensaje.contains("Traspaso")) {
+        if (mensaje.contains("pasó a Traspaso")) {
             String biblioteca = mensaje.substring(mensaje.lastIndexOf("en ") + 3);
             return biblioteca + " - Cola Ingreso";
-        } else if (mensaje.contains("🚚") && mensaje.contains("Salida")) {
+        } else if (mensaje.contains("pasó a Salida")) {
             String biblioteca = mensaje.substring(mensaje.lastIndexOf("en ") + 3);
             return biblioteca + " - Cola Traspaso";
-        } else if (mensaje.contains("🚀") && mensaje.contains("salió")) {
+        } else if (mensaje.contains("salió de")) {
             String biblioteca = mensaje.substring(mensaje.lastIndexOf("de ") + 3);
             return biblioteca + " - Cola Salida";
-        } else if (mensaje.contains("➡️") && mensaje.contains("llegó")) {
-            String biblioteca = mensaje.substring(mensaje.lastIndexOf("a ") + 2);
+        } else if (mensaje.contains("llegó a destino")) {
+            String biblioteca = mensaje.substring(mensaje.lastIndexOf("en ") + 3);
             return biblioteca + " - En tránsito";
-        } else if (mensaje.contains("📚") && mensaje.contains("llegó a destino")) {
+        } else if (mensaje.contains("recibido en PRÉSTAMO")) {
             String biblioteca = mensaje.substring(mensaje.lastIndexOf("en ") + 3);
-            return biblioteca + " - ✅ Destino Final";
-        } else if (mensaje.contains("📥") && mensaje.contains("Ingreso")) {
-            // Por si hay mensajes de ingreso explícitos
-            String biblioteca = mensaje.substring(mensaje.lastIndexOf("en ") + 3);
-            return biblioteca + " - Cola Ingreso";
+            return biblioteca + " - En tránsito";
         }
         return null;
     }
 
     private String extraerTituloLibro(String mensaje) {
-
-        if (mensaje.contains("🚀 ENVÍO INICIADO")) {
-            String sinPrefijo = mensaje.substring(mensaje.indexOf(":") + 2); // +2 para el espacio después de ":"
-            String titulo = sinPrefijo.substring(0, sinPrefijo.indexOf(" en "));
-            return titulo.trim();
-        }
-        try {
-            if (mensaje.contains("➡️") && mensaje.contains("'")) {
-                int start = mensaje.indexOf("'") + 1;
-                int end = mensaje.indexOf("'", start);
-                return mensaje.substring(start, end);
-            } else {
-                String[] partes = mensaje.split(" ");
-                for (int i = 0; i < partes.length; i++) {
-                    if (partes[i].equals("pasó") || partes[i].equals("salió") ||
-                            partes[i].equals("llegó") || partes[i].equals("'")) {
-                        // Reconstruir el título desde el inicio hasta esta palabra
-                        StringBuilder titulo = new StringBuilder();
-                        for (int j = 1; j < i; j++) { // Empezar desde 1 para saltar el emoji
-                            if (j > 1) titulo.append(" ");
-                            titulo.append(partes[j]);
-                        }
-                        return titulo.toString().replace("'", "").trim();
-                    }
-                }
+        if (mensaje.contains(":")) {
+            String sinPrefijo = mensaje.substring(mensaje.indexOf(":") + 2);
+            if (sinPrefijo.contains(" en ")) {
+                return sinPrefijo.substring(0, sinPrefijo.indexOf(" en ")).trim();
             }
-        } catch (Exception e) {
-            System.err.println("Error extrayendo título del mensaje: " + mensaje);
+        }
+        if (mensaje.contains("'")) {
+            int start = mensaje.indexOf("'") + 1;
+            int end = mensaje.indexOf("'", start);
+            if (end > start) return mensaje.substring(start, end);
         }
         return null;
     }
@@ -189,7 +175,7 @@ public class PanelTraficoLibros extends JPanel {
 
     private void filtrarEnTransito() {
         TableRowSorter<TraficoTableModel> sorter = new TableRowSorter<>(tableModel);
-        sorter.setRowFilter(RowFilter.regexFilter("En tránsito|En transito", 3)); // columna estado
+        sorter.setRowFilter(RowFilter.regexFilter("En tránsito|En transito", 3));
         tablaTrafico.setRowSorter(sorter);
     }
 
@@ -197,74 +183,43 @@ public class PanelTraficoLibros extends JPanel {
         tablaTrafico.setRowSorter(null);
     }
 
-    // Modelo de tabla
+    // -------------------- MODELO TABLA --------------------
     private class TraficoTableModel extends AbstractTableModel {
-        private final String[] columnNames = {
-                "📖 Libro", "📍 Ubicación Actual", "🎯 Destino Final",
-                "Estado", "⏱️ Tiempo Estimado"
-        };
-
-        private java.util.List<Object[]> data = new ArrayList<>();
-        private java.util.List<Libro> librosReferencia = new ArrayList<>(); // Para mapear filas a libros
+        private final String[] columnNames = {"Libro", "Ubicación Actual", "Destino Final", "Estado", "Tiempo Estimado"};
+        private final java.util.List<Object[]> data = new ArrayList<>();
 
         @Override
-        public int getRowCount() {
-            return data.size();
-        }
-
+        public int getRowCount() { return data.size(); }
         @Override
-        public int getColumnCount() {
-            return columnNames.length;
-        }
-
+        public int getColumnCount() { return columnNames.length; }
         @Override
-        public String getColumnName(int column) {
-            return columnNames[column];
-        }
-
+        public String getColumnName(int column) { return columnNames[column]; }
         @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            if (rowIndex < data.size()) {
-                return data.get(rowIndex)[columnIndex];
-            }
-            return null;
-        }
+        public Object getValueAt(int rowIndex, int columnIndex) { return data.get(rowIndex)[columnIndex]; }
 
         public void actualizarDatosCompletos() {
             data.clear();
-            librosReferencia.clear();
-
             java.util.List<Libro> librosEnTransito = coordinador.getLibrosEnTransito();
 
             for (Libro libro : librosEnTransito) {
+                String clave = libro.getIsbn() + "_" + libro.getIdBibliotecaDestino();
                 Object[] row = new Object[5];
                 row[0] = libro.getTitulo() + " (" + libro.getIsbn() + ")";
-                row[1] = obtenerUbicacionDetallada(libro);
+                row[1] = ubicacionesDetalladas.getOrDefault(clave, obtenerUbicacionDetallada(libro));
                 row[2] = libro.getIdBibliotecaDestino();
-                row[3] = libro.getEstado();
+                row[3] = traducirEstadoParaTrafico(libro.getEstado());
                 row[4] = obtenerTiempoEstimado(libro);
                 data.add(row);
-                librosReferencia.add(libro);
             }
-
             fireTableDataChanged();
         }
 
         private String obtenerUbicacionDetallada(Libro libro) {
-            // Primero intentar obtener la ubicación del mapa de ubicaciones detalladas
-            String ubicacionGuardada = ubicacionesDetalladas.get(libro.getTitulo());
-            if (ubicacionGuardada != null) {
-                return ubicacionGuardada;
-            }
-
-            // Fallback: usar la ubicación básica si no hay información detallada
-            if (libro.getRuta() == null || libro.getRuta().isEmpty()) {
+            if (libro.getRuta() == null || libro.getRuta().isEmpty())
                 return libro.getIdBibliotecaOrigen() + " - Origen";
-            }
             int indice = libro.getIndiceRutaActual();
-            if (indice < libro.getRuta().size()) {
+            if (indice < libro.getRuta().size())
                 return libro.getRuta().get(indice) + " - En tránsito";
-            }
             return libro.getIdBibliotecaDestino() + " - ✅ Destino Final";
         }
 
@@ -273,5 +228,16 @@ public class PanelTraficoLibros extends JPanel {
             int saltosRestantes = libro.getRuta().size() - libro.getIndiceRutaActual() - 1;
             return saltosRestantes <= 0 ? "Llegando..." : saltosRestantes + " saltos restantes";
         }
+    }
+
+    private String traducirEstadoParaTrafico(String estadoOriginal) {
+        if (estadoOriginal == null) return "Desconocido";
+        if (estadoOriginal.equalsIgnoreCase("Recibido En Prestamo"))
+            return "Disponible";  // se muestra como disponible en tabla de tráfico
+        if (estadoOriginal.equalsIgnoreCase("Disponible"))
+            return "Disponible";
+        if (estadoOriginal.toLowerCase().contains("transito"))
+            return "En tránsito";
+        return "Disponible";
     }
 }

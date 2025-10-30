@@ -177,7 +177,7 @@ public class PanelEnvioLibros extends JPanel {
 
             String prioridad = (String) comboPrioridad.getSelectedItem();
 
-            boolean exito = coordinador.iniciarEnvioLibro(libro, idOrigen, idDestino, prioridad);
+            boolean exito = coordinador.iniciarPrestamoManual(libro, idOrigen, idDestino, prioridad);
 
             if (exito) {
                 agregarLog("📦 Envío iniciado: " + libro.getTitulo() +
@@ -233,7 +233,7 @@ public class PanelEnvioLibros extends JPanel {
                 String rutaFormateada = String.join(" → ", ruta);
                 String unidad = (criterio == RutaDijkstra.Criterio.TIEMPO) ? "segundos" : "unidades de costo";
 
-                agregarLog("✅ Ruta óptima por " + prioridad.toLowerCase() + ": " + rutaFormateada);
+                agregarLog("Ruta óptima por " + prioridad.toLowerCase() + ": " + rutaFormateada);
 
                 // Mostrar detalles de la ruta
                 if (ruta.size() > 2) {
@@ -265,7 +265,7 @@ public class PanelEnvioLibros extends JPanel {
             for (Libro libro : bibliotecaOrigen.getCatalogo().obtenerTodosLosLibros()) {
                 if (libro.getTitulo().equals(tituloBuscado) &&
                         libro.getIsbn().equals(isbnBuscado)) {
-                    System.out.println("✅ Libro REAL encontrado en origen");
+                    System.out.println("Libro REAL encontrado en origen");
                     return libro;
                 }
             }
@@ -284,7 +284,7 @@ public class PanelEnvioLibros extends JPanel {
     // Método para actualizar cuando cambian las bibliotecas
     public void actualizarDatos() {
         cargarDatos();
-        agregarLog("📚 Datos actualizados - Bibliotecas disponibles: " +
+        agregarLog(" Datos actualizados - Bibliotecas disponibles: " +
                 grafo.getBibliotecas().tamano());
     }
 }
