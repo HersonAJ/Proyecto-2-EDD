@@ -6,16 +6,9 @@ import org.example.Grafo.ListaAdyacencia;
 import org.example.Modelos.*;
 import org.example.Grafo.Arista;
 import org.example.TablaHash.*;
-import org.example.GUI.PanelEnvioLibros;
-import org.example.GUI.PanelTraficoLibros;
-import org.example.GUI.ConfiguracionManualBiblioteca;
-import org.example.GUI.PanelInfoRed;
-
+import org.example.GUI.PanelTraficoLibros2;
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.FileReader;
 
 public class MainWindow2 extends JFrame {
 
@@ -25,7 +18,7 @@ public class MainWindow2 extends JFrame {
     private BibliotecaWindow bibliotecaWindow;
     private CoordinadorEnvios coordinadorEnvios;
     private PanelEnvioLibros panelEnvios;
-    private PanelTraficoLibros  panelTrafico;
+    private PanelTraficoLibros2  panelTrafico;
     private ConfiguracionManualBiblioteca configuracionManualBiblioteca;
     private PanelInfoRed panelInfoRed;
 
@@ -37,7 +30,7 @@ public class MainWindow2 extends JFrame {
 
         this.grafo = new GrafoBibliotecas();
         this.coordinadorEnvios = new CoordinadorEnvios(grafo);
-        this.panelTrafico = new PanelTraficoLibros(coordinadorEnvios);
+        this.panelTrafico = new PanelTraficoLibros2(coordinadorEnvios);
         this.configuracionManualBiblioteca = new ConfiguracionManualBiblioteca(grafo);
         this.panelInfoRed = new PanelInfoRed(grafo, this);
 

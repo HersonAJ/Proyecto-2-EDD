@@ -185,4 +185,7 @@ public class CoordinadorEnvios {
 
         return prestamo;
     }
+    public GrafoBibliotecas getGrafo() {
+        return this.grafo;
+    }
 }
