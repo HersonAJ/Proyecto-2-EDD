@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 public class MainWindow extends JFrame {
+    /*
 
     private JTabbedPane tabs;
     private JTextPane logWidget;
@@ -598,5 +599,5 @@ public class MainWindow extends JFrame {
             }
         });
     }
-
+*/
 }

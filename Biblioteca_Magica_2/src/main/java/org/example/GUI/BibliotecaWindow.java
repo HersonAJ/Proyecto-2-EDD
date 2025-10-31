@@ -69,7 +69,8 @@ public class BibliotecaWindow extends JPanel {
             // Pestaña de Búsqueda (sin exportación)
             this.busquedaUnificada = new BusquedaUnificada(
                     biblioteca.getArbolTitulos(),
-                    biblioteca.getIndiceISBN(),
+                    //biblioteca.getIndiceISBN(),
+                    biblioteca.getTablaHash(),
                     biblioteca.getArbolFechas(),
                     biblioteca.getArbolGeneros(),
                     (mensaje, tipo) -> {

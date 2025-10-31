@@ -6,6 +6,7 @@ import org.example.B.ArbolB;
 import org.example.BPlus.ArbolBPlus;
 import org.example.Modelos.Libro;
 import org.example.Modelos.ListaLibros;
+import org.example.TablaHash.TablaHash;
 
 
 import javax.swing.*;
@@ -14,11 +15,13 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 public class BusquedaUnificada extends JPanel {
     private ArbolAVL arbolTitulos;
-    private IndiceISBN indiceISBN;
+    //private IndiceISBN indiceISBN;
+    private TablaHash<String, Libro> tablaHash;
     private ArbolB arbolB;
     private ArbolBPlus arbolBPlus;
     private BiConsumer<String, String> appendLog;
@@ -33,11 +36,12 @@ public class BusquedaUnificada extends JPanel {
     private JTable tablaResultados;
     private JScrollPane scrollTabla;
 
-    public BusquedaUnificada(ArbolAVL arbolTitulos, IndiceISBN indiceISBN,
+    public BusquedaUnificada(ArbolAVL arbolTitulos, /*IndiceISBN indiceISBN,*/ TablaHash<String, Libro> tablaHash,
                              ArbolB arbolB, ArbolBPlus arbolBPlus,
                              BiConsumer<String, String> logCallBack) {
         this.arbolTitulos = arbolTitulos;
-        this.indiceISBN = indiceISBN;
+        //this.indiceISBN = indiceISBN;
+        this.tablaHash = tablaHash;
         this.arbolB = arbolB;
         this.arbolBPlus = arbolBPlus;
         this.appendLog = logCallBack;
@@ -306,7 +310,8 @@ public class BusquedaUnificada extends JPanel {
     }
 
     private void buscarPorISBN(String isbn) {
-        if (indiceISBN == null || indiceISBN.estaVacio()) {
+        //if (indiceISBN == null || indiceISBN.estaVacio()) {
+            if (tablaHash == null || tablaHash.estaVacia()) {
             appendLog.accept("El índice ISBN está vacío. Cargue datos antes de buscar.", "error");
             JOptionPane.showMessageDialog(this, "El índice ISBN está vacío.",
                     "Índice vacío", JOptionPane.INFORMATION_MESSAGE);
@@ -315,7 +320,8 @@ public class BusquedaUnificada extends JPanel {
 
         appendLog.accept("\n--- Búsqueda por ISBN: '" + isbn + "' ---", "ok");
 
-        Libro resultado = indiceISBN.buscar(isbn);
+        //Libro resultado = indiceISBN.buscar(isbn);
+        Libro resultado = tablaHash.obtener(isbn);
 
         if (resultado != null) {
             appendLog.accept("Libro encontrado:\n" + resultado.toString(), "ok");

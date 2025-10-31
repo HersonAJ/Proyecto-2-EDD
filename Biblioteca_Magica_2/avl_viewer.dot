@@ -1,5 +1,5 @@
 digraph Arbol {
     rankdir=TB;
     node [shape=record, style=filled, fillcolor=lightyellow, fontname="Arial", fontsize=10];
-    n320461434 [label="<L> | El Quijote | <R>"];
+    n202328457 [label="<L> | El Quijote | <R>"];
 }

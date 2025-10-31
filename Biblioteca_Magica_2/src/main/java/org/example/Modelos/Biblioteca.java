@@ -5,6 +5,7 @@ import org.example.AVL_Auxiliar.IndiceISBN;
 import org.example.B.ArbolB;
 import org.example.BPlus.ArbolBPlus;
 import org.example.Catalogo.Catalogo;
+import org.example.TablaHash.TablaHash;
 
 public class Biblioteca {
 
@@ -22,7 +23,8 @@ public class Biblioteca {
     private ArbolB arbolFechas;
     private ArbolBPlus arbolGeneros;
     private Catalogo catalogo;
-    private IndiceISBN indiceISBN;
+    //private IndiceISBN indiceISBN;
+    private TablaHash<String, Libro> tablaHash;
 
     //constructor basico
     //sobrecargando el constructor
@@ -39,7 +41,8 @@ public class Biblioteca {
         this.arbolFechas = new ArbolB();
         this.arbolGeneros = new ArbolBPlus();
         this.catalogo = new Catalogo();
-        this.indiceISBN = new IndiceISBN();
+        //this.indiceISBN = new IndiceISBN();
+        this.tablaHash = new TablaHash<String, Libro>();
 
     }
 
@@ -53,7 +56,8 @@ public class Biblioteca {
     public ArbolB getArbolFechas() { return arbolFechas; }
     public ArbolBPlus getArbolGeneros() { return arbolGeneros; }
     public Catalogo getCatalogo() { return catalogo; }
-    public IndiceISBN getIndiceISBN() { return indiceISBN; }
+    //public IndiceISBN getIndiceISBN() { return indiceISBN; }
+    public TablaHash<String, Libro> getTablaHash() { return tablaHash; }
 
     // Método para pruebas
     public void agregarLibro(Libro libro) {
@@ -62,12 +66,14 @@ public class Biblioteca {
         arbolGeneros.insertarSoloGenero(libro.getGenero());
         arbolGeneros.insertarLibroEnGenero(libro);
         catalogo.agregarLibro(libro);
-        indiceISBN.insertar(libro.getIsbn(), libro);
+        //indiceISBN.insertar(libro.getIsbn(), libro);
+        tablaHash.insertar(libro.getIsbn(), libro);
     }
 
     public boolean eliminarLibroPorISBN(String isbn) {
         // Buscar en el índice ISBN de esta biblioteca
-        Libro libro = indiceISBN.buscar(isbn);
+        //Libro libro = indiceISBN.buscar(isbn);
+        Libro libro = tablaHash.obtener(isbn);
         if (libro == null) {
             return false; // Libro no encontrado en esta biblioteca
         }
@@ -84,7 +90,8 @@ public class Biblioteca {
         boolean eliminadoDelCatalogo = catalogo.eliminarLibroPorISBN(isbn); // Catálogo
 
         // Eliminar del índice ISBN de ESTA biblioteca
-        indiceISBN.eliminar(isbn);
+        tablaHash.eliminar(isbn);
+        //indiceISBN.eliminar(isbn);
 
         return eliminadoDelCatalogo;
     }
@@ -98,9 +105,8 @@ public class Biblioteca {
         return arbolTitulos.buscarTodosPorTitulo(titulo);
     }
 
-    public Libro buscarPorISBN(String isbn) {
-        return indiceISBN.buscar(isbn);
-    }
+    //public Libro buscarPorISBN(String isbn) { return indiceISBN.buscar(isbn); }
+    public Libro buscarPorISBN(String isbn) { return tablaHash.obtener(isbn); }
 
     public ListaLibros buscarPorRangoFechas(int fechaInicio, int fechaFin) {
         return arbolFechas.buscarPorRango(fechaInicio, fechaFin);
