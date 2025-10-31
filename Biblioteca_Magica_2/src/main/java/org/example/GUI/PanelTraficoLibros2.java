@@ -6,6 +6,7 @@ import org.example.Modelos.EnvioListener;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -20,7 +21,7 @@ public class PanelTraficoLibros2 extends JPanel implements EnvioListener {
 
     public PanelTraficoLibros2(CoordinadorEnvios coordinador) {
         this.coordinador = coordinador;
-        this.filasActivas = new HashMap<>();
+        this.filasActivas = new LinkedHashMap<>();
         this.ultimaUbicacionConocida = new HashMap<>();
         this.coordinador.agregarListener(this);
         inicializarComponentes();
@@ -32,8 +33,6 @@ public class PanelTraficoLibros2 extends JPanel implements EnvioListener {
     }
 
     private void procesarEvento(String mensaje) {
-        System.out.println("EVENTO TRAFICO: " + mensaje);
-
         // Procesar el evento y actualizar la tabla inmediatamente
         if (mensaje.contains("pasó a Traspaso en")) {
             procesarPasoATraspaso(mensaje);
@@ -273,6 +272,7 @@ public class PanelTraficoLibros2 extends JPanel implements EnvioListener {
         tablaTrafico.setRowHeight(25);
         tablaTrafico.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
         tablaTrafico.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        tablaTrafico.getColumnModel().getColumn(3).setCellRenderer(new EstadoCellRenderer());
 
         JScrollPane scrollPane = new JScrollPane(tablaTrafico);
         scrollPane.setPreferredSize(new Dimension(800, 400));
@@ -282,5 +282,36 @@ public class PanelTraficoLibros2 extends JPanel implements EnvioListener {
         lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 14));
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
         add(lblTitulo, BorderLayout.NORTH);
+    }
+
+    private class EstadoCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            if (value != null) {
+                String estado = value.toString();
+
+                // Colores para cada estado
+                if ("En Transito".equals(estado)) {
+                    c.setBackground(Color.ORANGE);  // Naranja para en tránsito
+                    c.setForeground(Color.BLACK);
+                } else if ("Disponible".equals(estado)) {
+                    c.setBackground(Color.GREEN);   // Verde para disponible
+                    c.setForeground(Color.BLACK);
+                } else {
+                    c.setBackground(table.getBackground());
+                    c.setForeground(table.getForeground());
+                }
+            }
+
+            // Centrar el texto
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setFont(getFont().deriveFont(Font.BOLD)); // Texto en negrita
+
+            return c;
+        }
     }
 }
