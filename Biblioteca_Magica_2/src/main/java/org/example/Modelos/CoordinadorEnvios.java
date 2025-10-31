@@ -142,6 +142,8 @@ public class CoordinadorEnvios {
 
 // Para envíos manuales entre bibliotecas
     public boolean iniciarPrestamoManual(Libro libroOriginal, String idOrigen, String idDestino, String prioridad) {
+        vaciarTransito();
+
         if (!grafo.existeBiblioteca(idOrigen) || !grafo.existeBiblioteca(idDestino)) {
             System.err.println("Error: Bibliotecas origen o destino no existen");
             return false;
@@ -187,5 +189,9 @@ public class CoordinadorEnvios {
     }
     public GrafoBibliotecas getGrafo() {
         return this.grafo;
+    }
+
+    public void vaciarTransito(){
+        librosEnTransito.clear();
     }
 }

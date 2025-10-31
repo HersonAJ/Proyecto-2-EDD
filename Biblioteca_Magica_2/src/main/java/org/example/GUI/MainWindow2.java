@@ -221,6 +221,7 @@ public class MainWindow2 extends JFrame {
     }
 
     private void cargarCSVLibros() {
+        coordinadorEnvios.vaciarTransito();
         // Crear el callback para el progreso en tiempo real
         LectorCSVLibros.ProgresoCallback progresoCallback = new LectorCSVLibros.ProgresoCallback() {
             @Override
