@@ -32,7 +32,7 @@ public class BibliotecaWindow extends JPanel {
         if (biblioteca != null) {
             // Pestaña de Listado Alfabético con botón de exportación
             JPanel panelListado = crearPanelConExportacion(
-                    new ListadoAlfabetico(biblioteca.getArbolTitulos()),
+                    new ListadoAlfabetico(biblioteca),
                     "Listado Alfabético",
                     this::exportarListadoAlfabetico
             );

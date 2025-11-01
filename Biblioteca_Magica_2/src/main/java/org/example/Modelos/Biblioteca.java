@@ -78,6 +78,10 @@ public class Biblioteca {
             return false; // Libro no encontrado en esta biblioteca
         }
 
+        if (!libro.getEstado().equalsIgnoreCase("Disponible")) {
+            return false;
+        }
+
         // Obtener todos los datos necesarios para eliminación
         String titulo = libro.getTitulo();
         String fecha = libro.getFecha();
