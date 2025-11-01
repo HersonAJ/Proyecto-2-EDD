@@ -171,6 +171,16 @@ public class MainWindow2 extends JFrame {
         agregarLibro.addActionListener(e -> agregarLibroManual());
         menuGestion.add(agregarLibro);
 
+        JMenuItem eliminarLibroGlobal = new JMenuItem("Eliminar Libro (Global)");
+        eliminarLibroGlobal.addActionListener(e -> {
+            EliminarLibroGlobal dialog = new EliminarLibroGlobal(this, grafo, () -> {
+                appendLog("Eliminación global de libro completada", "info");
+                actualizarTodosLosPaneles();
+            });
+            dialog.setVisible(true);
+        });
+        menuGestion.add(eliminarLibroGlobal);
+
         // Menú Visualización
         JMenu menuVisualizacion = new JMenu("Visualización");
 
