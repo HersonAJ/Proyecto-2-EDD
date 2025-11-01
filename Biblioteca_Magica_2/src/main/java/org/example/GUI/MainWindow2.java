@@ -53,6 +53,9 @@ public class MainWindow2 extends JFrame {
         JPanel panelBibliotecaIndividual = crearPanelBibliotecaIndividual();
         tabs.addTab("Biblioteca Individual", panelBibliotecaIndividual);
 
+        BusquedaGlobal busquedaGlobal = new BusquedaGlobal(grafo);
+        tabs.addTab("Busqueda Global", busquedaGlobal);
+
         JPanel panelEnvios = crearPanelEnvios();
         tabs.addTab("Envio entre bibiliotecas", panelEnvios);
 
