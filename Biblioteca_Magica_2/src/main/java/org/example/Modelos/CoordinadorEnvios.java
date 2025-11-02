@@ -39,7 +39,6 @@ public class CoordinadorEnvios {
         // Encolar en cola de ingreso de biblioteca origen
         Biblioteca origen = grafo.getBiblioteca(idOrigen);
         origen.getColaIngreso().encolar(libro);
-        System.out.println("Libro '" + libro.getTitulo() + "' encolado en Ingreso de " + idOrigen);
         librosEnTransito.add(libro);
 
         return true;
@@ -142,7 +141,8 @@ public class CoordinadorEnvios {
 
 // Para envíos manuales entre bibliotecas
     public boolean iniciarPrestamoManual(Libro libroOriginal, String idOrigen, String idDestino, String prioridad) {
-        vaciarTransito();
+        limpiarTransitoCompletados();
+        //vaciarTransito();
 
         if (!grafo.existeBiblioteca(idOrigen) || !grafo.existeBiblioteca(idDestino)) {
             System.err.println("Error: Bibliotecas origen o destino no existen");
@@ -201,5 +201,21 @@ public class CoordinadorEnvios {
 
     public void vaciarTransito(){
         librosEnTransito.clear();
+    }
+
+    public void limpiarTransitoCompletados() {
+        Iterator<Libro> iterador = librosEnTransito.iterator();
+        int removidos = 0;
+
+        while (iterador.hasNext()) {
+            Libro libro = iterador.next();
+            //Solo remover libros que YA COMPLETARON su viaje
+            if ("Disponible".equals(libro.getEstado()) ||
+                    "Recibido En Prestamo".equals(libro.getEstado()) ||
+                    libro.esDestinoFinal()) {
+                iterador.remove();
+                removidos++;
+            }
+        }
     }
 }
