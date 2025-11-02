@@ -61,6 +61,9 @@ public class LectorCSVLibros {
         if (campos.length != 9) {
             String error = "Línea " + numeroLinea + ": Formato incorrecto. Se esperaban 9 campos, se encontraron " + campos.length;
             resultado.agregarError("Línea " + numeroLinea, error);
+            if (progresoCallback != null) {
+                progresoCallback.reportarLinea( error, "error");
+            }
             return;
         }
 
@@ -76,12 +79,22 @@ public class LectorCSVLibros {
             String idDestino = campos[7].trim();
             String prioridad = campos[8].trim();
 
-            // 3. Validar que bibliotecas existen
+            // 3. Validar ISBN
+            if (!validarISBN(isbn)) {
+                String error = "ISBN inválido: '" + isbn + "'. Debe tener 13 dígitos numéricos (puede incluir guiones)";
+                resultado.agregarError(titulo, error);
+                if (progresoCallback != null) {
+                    progresoCallback.reportarLinea("Error con libro '" + titulo + "': " + error, "error");
+                }
+                return;
+            }
+
+            // 4. Validar que bibliotecas existen
             if (!grafo.existeBiblioteca(idOrigen)) {
                 String error = "Biblioteca origen no existe: " + idOrigen;
                 resultado.agregarError(titulo, error);
                 if (progresoCallback != null) {
-                    progresoCallback.reportarLinea("❌ Error con libro '" + titulo + "': " + error, "error");
+                    progresoCallback.reportarLinea("Error con libro '" + titulo + "': " + error, "error");
                 }
                 return;
             }
@@ -90,32 +103,33 @@ public class LectorCSVLibros {
                 String error = "Biblioteca destino no existe: " + idDestino;
                 resultado.agregarError(titulo, error);
                 if (progresoCallback != null) {
-                    progresoCallback.reportarLinea("❌ Error con libro '" + titulo + "': " + error, "error");
+                    progresoCallback.reportarLinea("Error con libro '" + titulo + "': " + error, "error");
                 }
                 return;
             }
 
-            // 4. Crear objeto Libro (NO agregar a biblioteca origen)
-            Libro libro = new Libro(titulo, isbn, genero, año, autor);
+            // 5. Crear objeto Libro (NO agregar a biblioteca origen)
+            String isbnNormalizado = isbn.replaceAll("[-\\s]", "");
+            Libro libro = new Libro(titulo, isbnNormalizado, genero, año, autor);
 
-            // 5. Configurar libro para envío inmediato
+            // 6. Configurar libro para envío inmediato
             configurarLibroParaEnvio(libro, idOrigen, idDestino, prioridad);
 
-            // 6. Iniciar envío a través del coordinador
+            // 7. Iniciar envío a través del coordinador
             boolean exito = coordinador.iniciarEnvioLibro(libro, idOrigen, idDestino, prioridad);
 
             if (exito) {
-                // ✅ INCREMENTAR ÉXITOS
+                // INCREMENTAR ÉXITOS
                 resultado.incrementarExitosos();
                 if (progresoCallback != null) {
-                    progresoCallback.reportarLinea("✅ Libro '" + titulo + "' encolado para envío de " + idOrigen + " a " + idDestino, "ok");
+                    progresoCallback.reportarLinea("Libro '" + titulo + "' (ISBN: " + isbnNormalizado + ") encolado para envío de " + idOrigen + " a " + idDestino, "ok");
                 }
             } else {
-                // ❌ INCREMENTAR FALLOS
+                // INCREMENTAR FALLOS
                 String error = "No se pudo iniciar el envío";
                 resultado.agregarError(titulo, error);
                 if (progresoCallback != null) {
-                    progresoCallback.reportarLinea("❌ Error con libro '" + titulo + "': " + error, "error");
+                    progresoCallback.reportarLinea("Error con libro '" + titulo + "': " + error, "error");
                 }
             }
 
@@ -123,11 +137,10 @@ public class LectorCSVLibros {
             String error = "Error procesando línea: " + e.getMessage();
             resultado.agregarError("Línea " + numeroLinea, error);
             if (progresoCallback != null) {
-                progresoCallback.reportarLinea("❌ Error en línea " + numeroLinea + ": " + error, "error");
+                progresoCallback.reportarLinea("Error en línea " + numeroLinea + ": " + error, "error");
             }
         }
     }
-
     private String[] parsearLineaCSV(String linea) {
         List<String> campos = new ArrayList<>();
         StringBuilder campoActual = new StringBuilder();
@@ -198,21 +211,6 @@ public class LectorCSVLibros {
         }
     }
 
-    // Método para mostrar reporte completo
-    public void mostrarReporte(ResultadoCarga resultado) {
-        System.out.println("\n=== REPORTE DE CARGA CSV ===");
-        System.out.println("📊 Libros procesados exitosamente: " + resultado.getExitosos());
-        System.out.println("❌ Libros con errores: " + resultado.getFallidos());
-
-        if (!resultado.getErrores().isEmpty()) {
-            System.out.println("\n--- Errores encontrados ---");
-            for (String error : resultado.getErrores()) {
-                System.out.println("  • " + error);
-            }
-        }
-
-        System.out.println("============================\n");
-    }
 
     public interface ProgresoCallback {
         void reportarLinea(String mensaje, String tipo);
@@ -223,4 +221,26 @@ public class LectorCSVLibros {
     public void setProgresoCallback(ProgresoCallback callback) {
         this.progresoCallback = callback;
     }
+
+    private boolean validarISBN(String isbn) {
+        if (isbn == null || isbn.trim().isEmpty()) {
+            return false;
+        }
+
+        // Remover todos los caracteres no numéricos
+        String isbnLimpio = isbn.replaceAll("[^\\d]", "");
+
+        // Validar longitud exacta de 13 dígitos
+        if (isbnLimpio.length() != 13) {
+            System.out.println("ISBN '" + isbn + "' tiene " + isbnLimpio.length() + " dígitos después de limpiar");
+            return false;
+        }
+
+        // Validar que todos los caracteres sean dígitos
+        if (!isbnLimpio.matches("\\d{13}")) {
+            return false;
+        }
+        return true;
+    }
+
 }
