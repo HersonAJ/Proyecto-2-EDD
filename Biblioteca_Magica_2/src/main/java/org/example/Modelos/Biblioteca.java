@@ -5,7 +5,11 @@ import org.example.AVL_Auxiliar.IndiceISBN;
 import org.example.B.ArbolB;
 import org.example.BPlus.ArbolBPlus;
 import org.example.Catalogo.Catalogo;
+import org.example.Grafo.GrafoBibliotecas;
 import org.example.TablaHash.TablaHash;
+
+import java.util.Date;
+import java.util.List;
 
 public class Biblioteca {
 
@@ -25,6 +29,7 @@ public class Biblioteca {
     private Catalogo catalogo;
     //private IndiceISBN indiceISBN;
     private TablaHash<String, Libro> tablaHash;
+    private Pila<RegistroPrestamo> pilaPrestamo;
 
     //constructor basico
     //sobrecargando el constructor
@@ -43,6 +48,7 @@ public class Biblioteca {
         this.catalogo = new Catalogo();
         //this.indiceISBN = new IndiceISBN();
         this.tablaHash = new TablaHash<String, Libro>();
+        this.pilaPrestamo = new Pila<>();
 
     }
 
@@ -135,4 +141,95 @@ public class Biblioteca {
     public Cola<Libro> getColaIngreso() { return colaIngreso; }
     public Cola<Libro> getColaTraspaso() { return colaTraspaso; }
     public Cola<Libro> getColaSalida() { return colaSalida; }
+
+    //metodos para la pila de prestamos
+    public void registrarPrestamo(String isbn, String bibliotecaDestino, String titulo) {
+        RegistroPrestamo registro = new RegistroPrestamo(isbn, bibliotecaDestino, titulo, new Date());
+        pilaPrestamo.apilar(registro);
+        System.out.println("Prestamo registrado en la pila de " + this.id + " : " + titulo + " -> " + bibliotecaDestino);
+    }
+
+    public boolean deshacerUltimoPrestamo(GrafoBibliotecas grafo) {
+        if (pilaPrestamo.estaVacia()) {
+            System.out.println("pila vacia en:" + this.id);
+            return false;
+        }
+
+        RegistroPrestamo ultimoPrestamo = pilaPrestamo.desapilar();
+        System.out.println("Deshaciendo ultimo prestamo de: " + this.id + " : " + ultimoPrestamo.getTitulo());
+        return procesarDevolucion(grafo, ultimoPrestamo);
+    }
+
+    private boolean procesarDevolucion(GrafoBibliotecas grafo, RegistroPrestamo prestamo) {
+        try {
+            Biblioteca destino = grafo.getBiblioteca(prestamo.getBibliotecaDestino());
+            if (destino == null) {
+                System.out.println("Biblioteca destino no encontrada: " + prestamo.getBibliotecaDestino());
+                return false;
+            }
+
+            // 1. Cambiar estado del libro original en ESTA biblioteca (origen)
+            Libro libroLocal = this.buscarPorISBN(prestamo.getIsbn());
+            if (libroLocal != null && "En Prestamo".equals(libroLocal.getEstado())) {
+                libroLocal.setEstado("Disponible");
+                System.out.println("Estado cambiado a 'Disponible' en " + this.id);
+            }
+
+            // 2. Eliminar libro en biblioteca destino usando el método ESPECIAL
+            Libro libroDestino = destino.buscarPorISBN(prestamo.getIsbn());
+            if (libroDestino != null && "Recibido En Prestamo".equals(libroDestino.getEstado())) {
+                boolean eliminado = destino.eliminarLibroPrestamo(prestamo.getIsbn());
+                System.out.println("Libro eliminado en destino " + destino.getId() + ": " + (eliminado ? "éxito" : "fallo"));
+                return eliminado;
+            } else {
+                System.out.println("Libro no encontrado en destino o estado incorrecto");
+                if (libroDestino != null) {
+                    System.out.println("   Estado actual: " + libroDestino.getEstado());
+                }
+                return false;
+            }
+        } catch (Exception e) {
+            System.out.println("Error deshaciendo préstamo: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean hayPrestamosParaDeshacer() { return !pilaPrestamo.estaVacia();}
+
+    public String getInforPila() {
+        return "pila de " + this.id + " : " + pilaPrestamo.tamaño() + " prestamos.";
+    }
+
+    public List<RegistroPrestamo> obtenerPrestamos() {
+        return pilaPrestamo.obtenerElementos();
+    }
+
+    //metodo para eliminar un libro prestado
+    public boolean eliminarLibroPrestamo(String isbn) {
+        Libro libro = tablaHash.obtener(isbn);
+        if (libro == null) {
+            return false; // Libro no encontrado
+        }
+
+        // Validación ESPECIAL para préstamos
+        if (!"Recibido En Prestamo".equalsIgnoreCase(libro.getEstado())) {
+            System.out.println("No se puede eliminar préstamo - Estado incorrecto: " + libro.getEstado());
+            return false;
+        }
+
+        // Obtener datos para eliminación
+        String titulo = libro.getTitulo();
+        String fecha = libro.getFecha();
+        String genero = libro.getGenero();
+
+        // Eliminar de todas las estructuras
+        arbolTitulos.eliminarPorISBN(isbn, titulo);
+        arbolFechas.eliminarPorISBN(isbn, fecha);
+        arbolGeneros.eliminarPorISBN(isbn, genero);
+        boolean eliminadoDelCatalogo = catalogo.eliminarLibroPorISBN(isbn);
+        tablaHash.eliminar(isbn);
+
+        System.out.println("Libro de préstamo eliminado: " + titulo);
+        return eliminadoDelCatalogo;
+    }
 }

@@ -1,5 +1,6 @@
 package org.example.GUI;
 
+import org.example.Grafo.GrafoBibliotecas;
 import org.example.Modelos.Biblioteca;
 import org.example.GUI.Vistas.*;
 
@@ -16,9 +17,11 @@ public class BibliotecaWindow extends JPanel {
     private BViewer bViewer;
     private BPlusViewer bPlusViewer;
     private BusquedaUnificada busquedaUnificada;
+    private GrafoBibliotecas grafo;
 
-    public BibliotecaWindow(Biblioteca biblioteca) {
+    public BibliotecaWindow(Biblioteca biblioteca, GrafoBibliotecas grafo) {
         this.biblioteca = biblioteca;
+        this.grafo = grafo;
         setLayout(new BorderLayout());
         initComponents();
         if (biblioteca != null) {
@@ -78,6 +81,9 @@ public class BibliotecaWindow extends JPanel {
                     }
             );
             tabs.addTab("Búsqueda", busquedaUnificada);
+
+            HistorialPrestamos historialPrestamos = new HistorialPrestamos(biblioteca, grafo);
+            tabs.addTab("Historial Préstamos", historialPrestamos);
 
         } else {
             JLabel lblMensaje = new JLabel("Seleccione una biblioteca para cargar", JLabel.CENTER);

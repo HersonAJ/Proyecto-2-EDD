@@ -175,6 +175,14 @@ public class CoordinadorEnvios {
         origen.getColaIngreso().encolar(libroPrestamo);
         librosEnTransito.add(libroPrestamo);
 
+        //elementos para registar en la pila de prestamos
+        Biblioteca bibliotecaOrigen = grafo.getBiblioteca(idOrigen);
+        bibliotecaOrigen.registrarPrestamo(
+                libroOriginal.getIsbn(),
+                idDestino,
+                libroOriginal.getTitulo()
+        );
+
         return true;
     }
 

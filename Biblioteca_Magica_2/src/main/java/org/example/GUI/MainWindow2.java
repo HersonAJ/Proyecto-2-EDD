@@ -104,7 +104,7 @@ public class MainWindow2 extends JFrame {
 
             if (biblioteca != null) {
                 // Crear y mostrar la biblioteca seleccionada
-                bibliotecaWindow = new BibliotecaWindow(biblioteca);
+                bibliotecaWindow = new BibliotecaWindow(biblioteca, grafo);
 
                 panel.removeAll();
                 panel.add(panelSelector, BorderLayout.NORTH);
