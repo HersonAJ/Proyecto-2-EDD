@@ -1,9 +1,9 @@
 package org.example.GUI.Vistas;
 
 import org.example.AVL.ArbolAVL;
-import org.example.AVL_Auxiliar.IndiceISBN;
 import org.example.Catalogo.Catalogo;
 import org.example.Modelos.Libro;
+import org.example.TablaHash.TablaHash;
 
 import javax.swing.*;
 import javax.swing.text.*;
@@ -13,7 +13,7 @@ import java.awt.event.ActionListener;
 
 public class PruebaRendimiento extends JPanel {
     private ArbolAVL arbolTitulos;
-    private IndiceISBN indiceISBN;
+    private TablaHash<String, Libro> tablaHash;
     private Catalogo catalogo;
 
     // Componentes de UI
@@ -25,9 +25,9 @@ public class PruebaRendimiento extends JPanel {
     private JScrollPane scrollResultados;
     private StyledDocument doc;
 
-    public PruebaRendimiento(ArbolAVL arbolTitulos, IndiceISBN indiceISBN, Catalogo catalogo) {
+    public PruebaRendimiento(ArbolAVL arbolTitulos, TablaHash<String, Libro> tablaHash, Catalogo catalogo) {
         this.arbolTitulos = arbolTitulos;
-        this.indiceISBN = indiceISBN;
+        this.tablaHash = tablaHash;
         this.catalogo = catalogo;
 
         setupUI();
@@ -107,7 +107,7 @@ public class PruebaRendimiento extends JPanel {
     private void onCompararClicked() {
         String texto = editBusqueda.getText().trim();
         if (texto.isEmpty()) {
-            appendResultado("❌ Error: Ingrese un valor para buscar", Color.RED);
+            appendResultado("Error: Ingrese un valor para buscar", Color.RED);
             return;
         }
 
@@ -140,7 +140,7 @@ public class PruebaRendimiento extends JPanel {
     }
 
     private void ejecutarComparacionTitulo(String titulo) {
-        appendResultado("📚 COMPARACIÓN: BÚSQUEDA POR TÍTULO", new Color(0, 0, 139)); // darkblue
+        appendResultado("COMPARACIÓN: BÚSQUEDA POR TÍTULO", new Color(0, 0, 139)); // darkblue
         appendResultado("Buscando: \"" + titulo + "\"", Color.BLACK);
         appendResultado("", Color.BLACK);
 
@@ -180,7 +180,7 @@ public class PruebaRendimiento extends JPanel {
     }
 
     private void ejecutarComparacionISBN(String isbn) {
-        appendResultado("🔖 COMPARACIÓN: BÚSQUEDA POR ISBN", new Color(0, 0, 139)); // darkblue
+        appendResultado("COMPARACIÓN: BÚSQUEDA POR ISBN", new Color(0, 0, 139)); // darkblue
         appendResultado("Buscando: \"" + isbn + "\"", Color.BLACK);
         appendResultado("", Color.BLACK);
 
@@ -196,7 +196,7 @@ public class PruebaRendimiento extends JPanel {
         Libro resultadoBinario = null;
         final Libro[] tempBinario = new Libro[1];
         long tiempoBinario = medirTiempo(() -> {
-            tempBinario[0] = indiceISBN.buscar(isbn);
+            tempBinario[0] = tablaHash.obtener(isbn);
         });
         resultadoBinario = tempBinario[0];
 
@@ -204,7 +204,7 @@ public class PruebaRendimiento extends JPanel {
         appendResultado("📊 RESULTADOS:", new Color(0, 100, 0)); // darkgreen
         appendResultado("• Búsqueda Secuencial (Lista): " + tiempoSecuencial + " μs",
                 resultadoSecuencial != null ? Color.GREEN : Color.RED);
-        appendResultado("• Búsqueda Binaria (AVL ISBN): " + tiempoBinario + " μs",
+        appendResultado("• Búsqueda O(1) (Tabla Hash ISBN): " + tiempoBinario + " μs",
                 resultadoBinario != null ? Color.GREEN : Color.RED);
 
         if (tiempoSecuencial > 0) {

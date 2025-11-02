@@ -18,6 +18,7 @@ public class BibliotecaWindow extends JPanel {
     private BPlusViewer bPlusViewer;
     private BusquedaUnificada busquedaUnificada;
     private GrafoBibliotecas grafo;
+    private PruebaRendimiento pruebaRendimiento;
 
     public BibliotecaWindow(Biblioteca biblioteca, GrafoBibliotecas grafo) {
         this.biblioteca = biblioteca;
@@ -84,6 +85,16 @@ public class BibliotecaWindow extends JPanel {
 
             HistorialPrestamos historialPrestamos = new HistorialPrestamos(biblioteca, grafo);
             tabs.addTab("Historial Préstamos", historialPrestamos);
+
+            PanelOrdenamientos panelOrdenamientos = new PanelOrdenamientos(biblioteca);
+            tabs.addTab("Ordenamientos", panelOrdenamientos);
+
+            this.pruebaRendimiento = new PruebaRendimiento(
+                    biblioteca.getArbolTitulos(),
+                    biblioteca.getTablaHash(),
+                    biblioteca.getCatalogo()
+            );
+            tabs.addTab(" Rendimiento", pruebaRendimiento);
 
         } else {
             JLabel lblMensaje = new JLabel("Seleccione una biblioteca para cargar", JLabel.CENTER);
