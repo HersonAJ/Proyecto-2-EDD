@@ -10,6 +10,8 @@ import org.example.TablaHash.TablaHash;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
@@ -20,19 +22,22 @@ public class MainWindowGrafo extends JFrame {
     private JPanel panelGrafo;
     private Map<String, Point> posiciones;
     private Timer timerAnimacion;
+    private String nodoSeleccionado;
 
     public MainWindowGrafo(GrafoBibliotecas grafo) {
         super("Red de Bibliotecas - Visualización");
         this.grafo = grafo;
         this.posiciones = new HashMap<>();
+        this.nodoSeleccionado = null;
 
-        setSize(1000, 700); // Ventana más grande para más nodos
+        setSize(1000, 700);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
         initComponents();
         inicializarLayoutFuerza();
     }
+
 
     private void initComponents() {
         panelGrafo = new JPanel() {
@@ -44,7 +49,15 @@ public class MainWindowGrafo extends JFrame {
         };
 
         panelGrafo.setBackground(Color.WHITE);
-        panelGrafo.setPreferredSize(new Dimension(2000, 2000)); // Panel más grande
+        panelGrafo.setPreferredSize(new Dimension(2000, 2000));
+
+        panelGrafo.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                manejarClickNodo(e.getX(), e.getY());
+            }
+        });
+
         add(new JScrollPane(panelGrafo), BorderLayout.CENTER);
 
         // Panel de información
@@ -61,10 +74,41 @@ public class MainWindowGrafo extends JFrame {
         JButton btnReiniciarLayout = new JButton("Reiniciar Layout");
         btnReiniciarLayout.addActionListener(e -> reiniciarLayout());
 
+        JButton btnLimpiarSeleccion = new JButton("Limpiar Selección");
+        btnLimpiarSeleccion.addActionListener(e -> {
+            nodoSeleccionado = null;
+            panelGrafo.repaint();
+        });
+
         JPanel panelSur = new JPanel();
         panelSur.add(btnReiniciarLayout);
+        panelSur.add(btnLimpiarSeleccion);
         add(panelSur, BorderLayout.SOUTH);
     }
+
+    private void manejarClickNodo(int x, int y) {
+        String nodoAnterior = nodoSeleccionado;
+        nodoSeleccionado = null;
+
+        // Buscar si se hizo click en algún nodo
+        for (Map.Entry<String, Point> entry : posiciones.entrySet()) {
+            String id = entry.getKey();
+            Point pos = entry.getValue();
+
+            // Calcular distancia desde el click hasta el centro del nodo
+            double distancia = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2));
+
+            if (distancia <= 25) { // Radio del nodo
+                nodoSeleccionado = id;
+                break;
+            }
+        }
+
+        if (nodoSeleccionado != null || nodoAnterior != null) {
+            panelGrafo.repaint();
+        }
+    }
+
 
     private void inicializarLayoutFuerza() {
         // Inicializar posiciones aleatorias dentro del área visible
@@ -187,33 +231,52 @@ public class MainWindowGrafo extends JFrame {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // === DIBUJAR ARISTAS PRIMERO (para que queden detrás de los nodos) ===
+        // === DIBUJAR ARISTAS PRIMERO ===
         g2d.setStroke(new BasicStroke(1.5f));
         ListaAdyacencia todasAristas = grafo.getTodasLasAristas();
         ListaAdyacencia.IteradorLista iteradorAristas = todasAristas.iterador();
+
         while (iteradorAristas.tieneSiguiente()) {
             Arista arista = iteradorAristas.siguiente();
             Point pOrigen = posiciones.get(arista.getIdOrigen());
             Point pDestino = posiciones.get(arista.getIdDestino());
             if (pOrigen == null || pDestino == null) continue;
 
-            // Calcular dirección de la línea
             double angulo = Math.atan2(pDestino.y - pOrigen.y, pDestino.x - pOrigen.x);
             int radioNodo = 25;
             int xAjustado = (int) (pDestino.x - radioNodo * Math.cos(angulo));
             int yAjustado = (int) (pDestino.y - radioNodo * Math.sin(angulo));
 
-            // Dibujar línea
-            g2d.setColor(new Color(100, 100, 100, 150)); // Gris semi-transparente
+            // RESALTAR ARISTAS DEL NODO SELECCIONADO
+            boolean esAristaResaltada = nodoSeleccionado != null &&
+                    (arista.getIdOrigen().equals(nodoSeleccionado) ||
+                            arista.getIdDestino().equals(nodoSeleccionado));
+
+            if (esAristaResaltada) {
+                // Aristas resaltadas - más gruesas y de color llamativo
+                g2d.setStroke(new BasicStroke(3.0f));
+                g2d.setColor(new Color(255, 100, 100, 200)); // Rojo intenso
+            } else {
+                // Aristas normales
+                g2d.setStroke(new BasicStroke(1.5f));
+                g2d.setColor(new Color(100, 100, 100, 150)); // Gris semi-transparente
+            }
+
             g2d.drawLine(pOrigen.x, pOrigen.y, xAjustado, yAjustado);
 
             // Flecha direccional
             dibujarFlecha(g2d, pOrigen, new Point(xAjustado, yAjustado), 10, 20);
 
-            // Etiqueta de la arista (solo si hay espacio)
+            // Mostrar AMBOS pesos en las aristas
             if (pOrigen.distance(pDestino) > 80) {
-                String etiqueta = "T:" + arista.getTiempo() + "s";
-                g2d.setColor(Color.BLUE);
+                String etiqueta = "T:" + arista.getTiempo() + "s C:" + arista.getCosto();
+
+                if (esAristaResaltada) {
+                    g2d.setColor(Color.RED); // Texto rojo para aristas resaltadas
+                } else {
+                    g2d.setColor(Color.BLUE); // Texto azul para aristas normales
+                }
+
                 g2d.setFont(new Font("Arial", Font.PLAIN, 10));
                 int labelX = (pOrigen.x + pDestino.x) / 2;
                 int labelY = (pOrigen.y + pDestino.y) / 2;
@@ -230,29 +293,53 @@ public class MainWindowGrafo extends JFrame {
             Point pos = entry.getValue();
             Biblioteca bib = bibliotecas.obtener(id);
 
-            // Nodo con gradiente
-            GradientPaint gradient = new GradientPaint(
-                    pos.x - 25, pos.y - 25, new Color(255, 200, 100),
-                    pos.x + 25, pos.y + 25, new Color(255, 150, 50)
-            );
-            g2d.setPaint(gradient);
-            g2d.fillOval(pos.x - 25, pos.y - 25, 50, 50);
+            // RESALTAR NODO SELECCIONADO
+            boolean esNodoSeleccionado = id.equals(nodoSeleccionado);
 
-            g2d.setColor(Color.BLACK);
-            g2d.drawOval(pos.x - 25, pos.y - 25, 50, 50);
+            if (esNodoSeleccionado) {
+                // Nodo seleccionado - gradiente azul y borde más grueso
+                GradientPaint gradient = new GradientPaint(
+                        pos.x - 30, pos.y - 30, new Color(100, 150, 255),
+                        pos.x + 30, pos.y + 30, new Color(50, 100, 200)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillOval(pos.x - 30, pos.y - 30, 60, 60); // Más grande
+
+                g2d.setColor(Color.BLUE);
+                g2d.setStroke(new BasicStroke(3.0f));
+                g2d.drawOval(pos.x - 30, pos.y - 30, 60, 60);
+            } else {
+                // Nodo normal - gradiente naranja
+                GradientPaint gradient = new GradientPaint(
+                        pos.x - 25, pos.y - 25, new Color(255, 200, 100),
+                        pos.x + 25, pos.y + 25, new Color(255, 150, 50)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillOval(pos.x - 25, pos.y - 25, 50, 50);
+
+                g2d.setColor(Color.BLACK);
+                g2d.setStroke(new BasicStroke(2f));
+                g2d.drawOval(pos.x - 25, pos.y - 25, 50, 50);
+            }
 
             // Texto del ID
-            g2d.setColor(Color.BLACK);
-            g2d.setFont(new Font("Arial", Font.BOLD, 11));
+            g2d.setColor(esNodoSeleccionado ? Color.WHITE : Color.BLACK); // Texto blanco en nodo seleccionado
+            g2d.setFont(new Font("Arial", Font.BOLD, esNodoSeleccionado ? 12 : 11)); // Texto más grande si está seleccionado
             FontMetrics fm = g2d.getFontMetrics();
             int textWidth = fm.stringWidth(id);
-            g2d.drawString(id, pos.x - textWidth/2, pos.y - 8);
+            int offsetY = esNodoSeleccionado ? -10 : -8; // Ajustar posición del texto
+            g2d.drawString(id, pos.x - textWidth/2, pos.y + offsetY);
 
-            // Nombre abreviado (solo si cabe)
-            g2d.setFont(new Font("Arial", Font.PLAIN, 8));
+            // Nombre abreviado
+            g2d.setFont(new Font("Arial", Font.PLAIN, esNodoSeleccionado ? 9 : 8));
             String nombreAbreviado = abreviarNombre(bib.getNombre(), 12);
             textWidth = g2d.getFontMetrics().stringWidth(nombreAbreviado);
-            g2d.drawString(nombreAbreviado, pos.x - textWidth/2, pos.y + 15);
+            int offsetYNombre = esNodoSeleccionado ? 18 : 15; // Ajustar posición del texto
+            g2d.drawString(nombreAbreviado, pos.x - textWidth/2, pos.y + offsetYNombre);
+        }
+
+        if (nodoSeleccionado != null) {
+            dibujarInfoNodoSeleccionado(g2d);
         }
     }
 
@@ -262,10 +349,10 @@ public class MainWindowGrafo extends JFrame {
     }
 
     private void reiniciarLayout() {
+        nodoSeleccionado = null;
         inicializarLayoutFuerza();
     }
 
-    // ... (los métodos obtenerInfoGrafo, dibujarFlecha se mantienen igual)
     private String obtenerInfoGrafo() {
         StringBuilder sb = new StringBuilder();
         sb.append("=== RED DE BIBLIOTECAS ===\n\n");
@@ -306,4 +393,30 @@ public class MainWindowGrafo extends JFrame {
         g2d.drawLine(p2.x, p2.y, x1, y1);
         g2d.drawLine(p2.x, p2.y, x2, y2);
     }
+
+    private void dibujarInfoNodoSeleccionado(Graphics2D g2d) {
+        Biblioteca bib = grafo.getBiblioteca(nodoSeleccionado);
+        if (bib == null) return;
+
+        ListaAdyacencia conexiones = grafo.getConexionesSalientes(nodoSeleccionado);
+        int numConexiones = conexiones.getTamaño();
+
+        String info = String.format(" %s - Conexiones: %d", bib.getNombre(), numConexiones);
+
+        g2d.setColor(new Color(0, 0, 0, 220));
+        g2d.setFont(new Font("Arial", Font.BOLD, 14));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(info);
+
+        // Fondo para el texto
+        g2d.setColor(new Color(255, 255, 255, 230));
+        g2d.fillRoundRect(20, 20, textWidth + 20, 30, 10, 10);
+        g2d.setColor(Color.BLACK);
+        g2d.drawRoundRect(20, 20, textWidth + 20, 30, 10, 10);
+
+        // Texto
+        g2d.setColor(Color.BLUE);
+        g2d.drawString(info, 30, 40);
+    }
+
 }
