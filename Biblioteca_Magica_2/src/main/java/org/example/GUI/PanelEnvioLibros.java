@@ -134,15 +134,17 @@ public class PanelEnvioLibros extends JPanel {
 
             if (bib.getCatalogo() != null && !bib.getCatalogo().estaVacio()) {
                 for (var libro : bib.getCatalogo().obtenerTodosLosLibros()) {
-                    comboLibros.addItem(libro.getTitulo() + " - " + libro.getIsbn() + " (en " + bib.getNombre() + ")");
-                    hayLibros = true;
+                    if ("Disponible".equals(libro.getEstado())) {
+                        comboLibros.addItem(libro.getTitulo() + " - " + libro.getIsbn() + " (en " + bib.getNombre() + ")");
+                        hayLibros = true;
+                    }
                 }
             }
         }
 
         if (!hayLibros) {
             if (idOrigen != null) {
-                comboLibros.addItem("No hay libros disponibles en " + idOrigen);
+                comboLibros.addItem("No hay libros DISPONIBLES en " + idOrigen);
             } else {
                 comboLibros.addItem("Seleccione una biblioteca origen primero");
             }
@@ -173,8 +175,16 @@ public class PanelEnvioLibros extends JPanel {
             }
 
             String libroSeleccionado = (String) comboLibros.getSelectedItem();
-            Libro libro = obtenerLibroRealDesdeSeleccion(libroSeleccionado, idOrigen);
 
+            if (libroSeleccionado.startsWith("No hay libros") ||
+                    libroSeleccionado.startsWith("Seleccione una biblioteca")) {
+                JOptionPane.showMessageDialog(this,
+                        "Seleccione un libro válido para el envío",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Libro libro = obtenerLibroRealDesdeSeleccion(libroSeleccionado, idOrigen);
             String prioridad = (String) comboPrioridad.getSelectedItem();
 
             boolean exito = coordinador.iniciarPrestamoManual(libro, idOrigen, idDestino, prioridad);
@@ -183,11 +193,12 @@ public class PanelEnvioLibros extends JPanel {
                 agregarLog("📦 Envío iniciado: " + libro.getTitulo() +
                         " de " + idOrigen + " a " + idDestino +
                         " (Prioridad: " + prioridad + ")");
+                cargarLibrosReales();
                 JOptionPane.showMessageDialog(this,
                         "El envío ha comenzado. El libro se moverá automáticamente según los tiempos de las colas.",
                         "Envío en curso", JOptionPane.INFORMATION_MESSAGE);
             } else {
-                agregarLog("❌ Error: no se pudo iniciar el envío de " + libro.getTitulo());
+                agregarLog("Error: no se pudo iniciar el envío de " + libro.getTitulo());
                 JOptionPane.showMessageDialog(this,
                         "No se pudo iniciar el envío. Verifique la conexión entre bibliotecas.",
                         "Error", JOptionPane.ERROR_MESSAGE);
@@ -256,23 +267,21 @@ public class PanelEnvioLibros extends JPanel {
         String tituloBuscado = partes[0];
         String isbnBuscado = partes[1].split(" ")[0];
 
-        System.out.println("🔍 Buscando libro: '" + tituloBuscado + "' en biblioteca " + idBibliotecaOrigen);
-
         // Buscar específicamente en la biblioteca origen
         Biblioteca bibliotecaOrigen = grafo.getBiblioteca(idBibliotecaOrigen);
 
         if (bibliotecaOrigen != null && bibliotecaOrigen.getCatalogo() != null) {
             for (Libro libro : bibliotecaOrigen.getCatalogo().obtenerTodosLosLibros()) {
                 if (libro.getTitulo().equals(tituloBuscado) &&
-                        libro.getIsbn().equals(isbnBuscado)) {
-                    System.out.println("Libro REAL encontrado en origen");
+                        libro.getIsbn().equals(isbnBuscado) &&
+                        "Disponible".equals(libro.getEstado())) {
                     return libro;
                 }
             }
         }
 
-        throw new RuntimeException("No se encontró el libro '" + tituloBuscado + "' en la biblioteca " + idBibliotecaOrigen +
-                ". El libro puede haber sido movido o eliminado.");
+        throw new RuntimeException("No se encontró el libro DISPONIBLE '" + tituloBuscado + "' en la biblioteca " + idBibliotecaOrigen +
+                ". El libro puede haber sido movido, eliminado o no está disponible.");
     }
 
     private void agregarLog(String mensaje) {
