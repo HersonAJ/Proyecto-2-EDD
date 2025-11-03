@@ -1,9 +1,9 @@
 package org.example.include;
 
-import org.example.BPlus.ArbolBPlus;
-import org.example.BPlus.NodoBPlus;
-import org.example.BPlus.NodoInterno;
-import org.example.BPlus.NodoHoja;
+import org.example.Estructuras.BPlus.ArbolBPlus;
+import org.example.Estructuras.BPlus.NodoBPlus;
+import org.example.Estructuras.BPlus.NodoInterno;
+import org.example.Estructuras.BPlus.NodoHoja;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;

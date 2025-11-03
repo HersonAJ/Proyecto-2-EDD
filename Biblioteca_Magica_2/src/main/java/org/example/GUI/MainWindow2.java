@@ -1,12 +1,19 @@
 package org.example.GUI;
 
-import org.example.GUI.VistasGrafo.*;
-import org.example.Grafo.GrafoBibliotecas;
-import org.example.Grafo.ListaAdyacencia;
+import org.example.CSV.LectorCSVBiblioteca;
+import org.example.CSV.LectorCSVConexiones;
+import org.example.CSV.LectorCSVLibros;
+import org.example.Estructuras.TablaHash.Iterador;
+import org.example.Estructuras.TablaHash.TablaHash;
+import org.example.GUI.VistasGenerales.*;
+import org.example.GUI.VistasManuales.*;
+import org.example.Estructuras.Grafo.GrafoBibliotecas;
+import org.example.Estructuras.Grafo.ListaAdyacencia;
+import org.example.GUI.VistasIndividuales.BibliotecaWindow;
+import org.example.GUI.VistasIndividuales.PanelEnvioLibros;
 import org.example.Modelos.*;
-import org.example.Grafo.Arista;
-import org.example.TablaHash.*;
-import org.example.GUI.PanelTraficoLibros2;
+import org.example.Estructuras.Grafo.Arista;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -18,7 +25,7 @@ public class MainWindow2 extends JFrame {
     private BibliotecaWindow bibliotecaWindow;
     private CoordinadorEnvios coordinadorEnvios;
     private PanelEnvioLibros panelEnvios;
-    private PanelTraficoLibros2  panelTrafico;
+    private PanelTraficoLibros2 panelTrafico;
     private ConfiguracionManualBiblioteca configuracionManualBiblioteca;
     private PanelInfoRed panelInfoRed;
 

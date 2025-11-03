@@ -1,7 +1,7 @@
 package org.example.Modelos;
 
-import org.example.Grafo.GrafoBibliotecas;
-import org.example.Grafo.RutaDijkstra;
+import org.example.Estructuras.Grafo.GrafoBibliotecas;
+import org.example.Estructuras.Grafo.RutaDijkstra;
 
 import java.util.*;
 

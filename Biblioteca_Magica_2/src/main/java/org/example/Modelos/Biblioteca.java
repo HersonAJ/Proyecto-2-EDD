@@ -1,12 +1,13 @@
 package org.example.Modelos;
 
-import org.example.AVL.ArbolAVL;
-import org.example.AVL_Auxiliar.IndiceISBN;
-import org.example.B.ArbolB;
-import org.example.BPlus.ArbolBPlus;
-import org.example.Catalogo.Catalogo;
-import org.example.Grafo.GrafoBibliotecas;
-import org.example.TablaHash.TablaHash;
+import org.example.Estructuras.AVL.ArbolAVL;
+import org.example.Estructuras.B.ArbolB;
+import org.example.Estructuras.BPlus.ArbolBPlus;
+import org.example.Estructuras.Catalogo.Catalogo;
+import org.example.Estructuras.Cola;
+import org.example.Estructuras.Grafo.GrafoBibliotecas;
+import org.example.Estructuras.Pila;
+import org.example.Estructuras.TablaHash.TablaHash;
 
 import java.util.Date;
 import java.util.List;
@@ -146,17 +147,14 @@ public class Biblioteca {
     public void registrarPrestamo(String isbn, String bibliotecaDestino, String titulo) {
         RegistroPrestamo registro = new RegistroPrestamo(isbn, bibliotecaDestino, titulo, new Date());
         pilaPrestamo.apilar(registro);
-        System.out.println("Prestamo registrado en la pila de " + this.id + " : " + titulo + " -> " + bibliotecaDestino);
     }
 
     public boolean deshacerUltimoPrestamo(GrafoBibliotecas grafo) {
         if (pilaPrestamo.estaVacia()) {
-            System.out.println("pila vacia en:" + this.id);
             return false;
         }
 
         RegistroPrestamo ultimoPrestamo = pilaPrestamo.desapilar();
-        System.out.println("Deshaciendo ultimo prestamo de: " + this.id + " : " + ultimoPrestamo.getTitulo());
         return procesarDevolucion(grafo, ultimoPrestamo);
     }
 
@@ -164,7 +162,6 @@ public class Biblioteca {
         try {
             Biblioteca destino = grafo.getBiblioteca(prestamo.getBibliotecaDestino());
             if (destino == null) {
-                System.out.println("Biblioteca destino no encontrada: " + prestamo.getBibliotecaDestino());
                 return false;
             }
 
@@ -172,19 +169,15 @@ public class Biblioteca {
             Libro libroLocal = this.buscarPorISBN(prestamo.getIsbn());
             if (libroLocal != null && "En Prestamo".equals(libroLocal.getEstado())) {
                 libroLocal.setEstado("Disponible");
-                System.out.println("Estado cambiado a 'Disponible' en " + this.id);
             }
 
             // 2. Eliminar libro en biblioteca destino usando el método ESPECIAL
             Libro libroDestino = destino.buscarPorISBN(prestamo.getIsbn());
             if (libroDestino != null && "Recibido En Prestamo".equals(libroDestino.getEstado())) {
                 boolean eliminado = destino.eliminarLibroPrestamo(prestamo.getIsbn());
-                System.out.println("Libro eliminado en destino " + destino.getId() + ": " + (eliminado ? "éxito" : "fallo"));
                 return eliminado;
             } else {
-                System.out.println("Libro no encontrado en destino o estado incorrecto");
                 if (libroDestino != null) {
-                    System.out.println("   Estado actual: " + libroDestino.getEstado());
                 }
                 return false;
             }
@@ -229,7 +222,6 @@ public class Biblioteca {
         boolean eliminadoDelCatalogo = catalogo.eliminarLibroPorISBN(isbn);
         tablaHash.eliminar(isbn);
 
-        System.out.println("Libro de préstamo eliminado: " + titulo);
         return eliminadoDelCatalogo;
     }
 }

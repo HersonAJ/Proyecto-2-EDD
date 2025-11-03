@@ -1,7 +1,7 @@
 package org.example.include;
 
-import org.example.B.ArbolB;
-import org.example.B.NodoB;
+import org.example.Estructuras.B.ArbolB;
+import org.example.Estructuras.B.NodoB;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;

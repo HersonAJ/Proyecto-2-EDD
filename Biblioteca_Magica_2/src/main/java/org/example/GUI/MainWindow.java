@@ -1,21 +1,6 @@
 package org.example.GUI;
 
-import org.example.GUI.Vistas.*;
-import org.example.Modelos.LectorCSV;
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import org.example.AVL.ArbolAVL;
-import org.example.B.ArbolB;
-import org.example.BPlus.ArbolBPlus;
-import org.example.AVL_Auxiliar.IndiceISBN;
-import org.example.Catalogo.Catalogo;
-import org.example.GUI.Vistas.PruebaRendimiento;
-
 import javax.swing.*;
-import java.awt.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 public class MainWindow extends JFrame {
     /*

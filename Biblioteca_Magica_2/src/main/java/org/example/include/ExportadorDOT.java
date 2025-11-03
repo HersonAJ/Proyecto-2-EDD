@@ -1,6 +1,6 @@
 package org.example.include;
 
-import org.example.AVL.NodoAVL;
+import org.example.Estructuras.AVL.NodoAVL;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
