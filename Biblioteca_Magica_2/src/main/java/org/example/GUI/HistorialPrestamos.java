@@ -1,5 +1,6 @@
 package org.example.GUI;
 
+import org.example.GUI.Vistas.ListadoAlfabetico;
 import org.example.Modelos.Biblioteca;
 import org.example.Modelos.RegistroPrestamo;
 import org.example.Grafo.GrafoBibliotecas;
@@ -19,12 +20,17 @@ public class HistorialPrestamos extends JPanel {
     private JTable tablaPrestamos;
     private JButton btnDeshacer;
     private JLabel lblEstado;
+    private BibliotecaWindow bibliotecaWindow;
 
-    public HistorialPrestamos(Biblioteca biblioteca, GrafoBibliotecas grafo) {
+    public HistorialPrestamos(Biblioteca biblioteca, GrafoBibliotecas grafo, BibliotecaWindow bibliotecaWindow) {
         this.biblioteca = biblioteca;
         this.grafo = grafo;
+        this.bibliotecaWindow = bibliotecaWindow;
         initComponents();
         cargarDatos();
+    }
+    public HistorialPrestamos(Biblioteca biblioteca, GrafoBibliotecas grafo) {
+        this(biblioteca, grafo, null);
     }
 
     private void initComponents() {
@@ -179,8 +185,15 @@ public class HistorialPrestamos extends JPanel {
                         "Devolución Exitosa",
                         JOptionPane.INFORMATION_MESSAGE);
 
-                // Recargar datos
+                // Recargar datos locales
                 cargarDatos();
+
+                if (bibliotecaWindow != null) {
+                    bibliotecaWindow.actualizarVistas();
+                } else {
+                    buscarYActualizarVistas();
+                }
+
             } else {
                 JOptionPane.showMessageDialog(this,
                         "Error al deshacer el préstamo\n" +
@@ -194,5 +207,16 @@ public class HistorialPrestamos extends JPanel {
     // Método para actualizar desde fuera
     public void actualizarVista() {
         cargarDatos();
+    }
+    private void buscarYActualizarVistas() {
+        // Buscar recursivamente en la jerarquía de componentes
+        Container parent = getParent();
+        while (parent != null) {
+            if (parent instanceof BibliotecaWindow) {
+                ((BibliotecaWindow) parent).actualizarVistas();
+                return;
+            }
+            parent = parent.getParent();
+        }
     }
 }

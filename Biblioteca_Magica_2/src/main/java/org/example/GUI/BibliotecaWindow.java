@@ -83,7 +83,7 @@ public class BibliotecaWindow extends JPanel {
             );
             tabs.addTab("Búsqueda", busquedaUnificada);
 
-            HistorialPrestamos historialPrestamos = new HistorialPrestamos(biblioteca, grafo);
+            HistorialPrestamos historialPrestamos = new HistorialPrestamos(biblioteca, grafo, this);
             tabs.addTab("Historial Préstamos", historialPrestamos);
 
             PanelOrdenamientos panelOrdenamientos = new PanelOrdenamientos(biblioteca);
