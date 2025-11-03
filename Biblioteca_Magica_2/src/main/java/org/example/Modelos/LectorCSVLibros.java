@@ -89,7 +89,17 @@ public class LectorCSVLibros {
                 return;
             }
 
-            // 4. Validar que bibliotecas existen
+            // 4. Validar que el año sea un número positivo de 1-4 dígitos
+            if (!validarAño(año)) {
+                String error = "Año inválido: '" + año + "'. Debe ser un número positivo de 1 a 4 dígitos (ej: 2000, 1895, 45)";
+                resultado.agregarError(titulo, error);
+                if (progresoCallback != null) {
+                    progresoCallback.reportarLinea("Error con libro '" + titulo + "': " + error, "error");
+                }
+                return;
+            }
+
+            // 5. Validar que bibliotecas existen
             if (!grafo.existeBiblioteca(idOrigen)) {
                 String error = "Biblioteca origen no existe: " + idOrigen;
                 resultado.agregarError(titulo, error);
@@ -108,21 +118,20 @@ public class LectorCSVLibros {
                 return;
             }
 
-            // 5. Crear objeto Libro (NO agregar a biblioteca origen)
-            String isbnNormalizado = isbn.replaceAll("[-\\s]", "");
-            Libro libro = new Libro(titulo, isbnNormalizado, genero, año, autor);
+            // 6. Crear objeto Libro (NO agregar a biblioteca origen)
+            Libro libro = new Libro(titulo, isbn, genero, año, autor);
 
-            // 6. Configurar libro para envío inmediato
+            // 7. Configurar libro para envío inmediato
             configurarLibroParaEnvio(libro, idOrigen, idDestino, prioridad);
 
-            // 7. Iniciar envío a través del coordinador
+            // 8. Iniciar envío a través del coordinador
             boolean exito = coordinador.iniciarEnvioLibro(libro, idOrigen, idDestino, prioridad);
 
             if (exito) {
                 // INCREMENTAR ÉXITOS
                 resultado.incrementarExitosos();
                 if (progresoCallback != null) {
-                    progresoCallback.reportarLinea("Libro '" + titulo + "' (ISBN: " + isbnNormalizado + ") encolado para envío de " + idOrigen + " a " + idDestino, "ok");
+                    progresoCallback.reportarLinea("Libro '" + titulo + "' (ISBN: " + isbn + ") encolado para envío de " + idOrigen + " a " + idDestino, "ok");
                 }
             } else {
                 // INCREMENTAR FALLOS
@@ -227,20 +236,28 @@ public class LectorCSVLibros {
             return false;
         }
 
-        // Remover todos los caracteres no numéricos
-        String isbnLimpio = isbn.replaceAll("[^\\d]", "");
+        // Contar solo los dígitos numéricos
+        String soloDigitos = isbn.replaceAll("[^\\d]", "");
 
-        // Validar longitud exacta de 13 dígitos
-        if (isbnLimpio.length() != 13) {
-            System.out.println("ISBN '" + isbn + "' tiene " + isbnLimpio.length() + " dígitos después de limpiar");
+        // Validar que tenga exactamente 13 dígitos
+        if (soloDigitos.length() != 13) {
             return false;
         }
 
-        // Validar que todos los caracteres sean dígitos
-        if (!isbnLimpio.matches("\\d{13}")) {
+        // Validar que todos los caracteres sean dígitos (después de limpiar)
+        if (!soloDigitos.matches("\\d{13}")) {
             return false;
         }
+
         return true;
     }
 
+    private boolean validarAño(String año) {
+        if (año == null || año.trim().isEmpty()) {
+            return false;
+        }
+        String añoLimpio = año.trim();
+        // Validar que sea un número positivo de 1 a 4 dígitos
+        return añoLimpio.matches("\\d{1,4}");
+    }
 }
