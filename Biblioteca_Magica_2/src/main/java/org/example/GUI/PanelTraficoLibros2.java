@@ -102,44 +102,49 @@ public class PanelTraficoLibros2 extends JPanel implements EnvioListener {
     }
 
     private void actualizarUbicacionPorTitulo(String titulo, String ubicacion) {
-        // Buscar el libro más reciente con este título
-        Libro libroMasReciente = null;
+        // Extraer la biblioteca del mensaje de ubicación
+        String bibliotecaEvento = ubicacion.split(" ")[0];
+
+        // Buscar TODOS los libros con este título y encontrar el que coincida
+        Libro libroCoincidente = null;
         for (Libro libro : coordinador.getLibrosEnTransito()) {
             if (libro.getTitulo().equals(titulo)) {
-                libroMasReciente = libro;
-                break;
+                // Verificar si este libro está relacionado con la biblioteca del evento
+                if (coincideConEvento(libro, bibliotecaEvento, ubicacion)) {
+                    libroCoincidente = libro;
+                    break;
+                }
             }
         }
 
-        if (libroMasReciente != null) {
-            String clave = generarClaveLibro(libroMasReciente);
+        if (libroCoincidente != null) {
+            String clave = generarClaveLibro(libroCoincidente);
             ultimaUbicacionConocida.put(clave, ubicacion);
         }
     }
 
-    private String extraerBibliotecaDeMensaje(String mensaje) {
-        try {
-            if (mensaje.contains("en ")) {
-                String[] partes = mensaje.split("en ");
-                if (partes.length > 1) {
-                    return partes[1].trim().split(" ")[0].trim();
-                }
-            }
-            if (mensaje.contains("llegó a ")) {
-                String[] partes = mensaje.split("llegó a ");
-                if (partes.length > 1) {
-                    return partes[1].trim().split(" ")[0].trim();
-                }
-            }
-            if (mensaje.contains("salió de ")) {
-                String[] partes = mensaje.split("salió de ");
-                if (partes.length > 1) {
-                    return partes[1].trim().split(" ")[0].trim();
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error extrayendo biblioteca de: " + mensaje);
+    private boolean coincideConEvento(Libro libro, String bibliotecaEvento, String ubicacionCompleta) {
+        // Si es destino final, debe coincidir con el destino del libro
+        if (ubicacionCompleta.contains("destino final")) {
+            return libro.getIdBibliotecaDestino().equals(bibliotecaEvento);
         }
+        // Si es en tránsito o en cola, puede coincidir con origen, destino o rutas intermedias
+        else {
+            return libro.getIdBibliotecaOrigen().equals(bibliotecaEvento) ||
+                    libro.getIdBibliotecaDestino().equals(bibliotecaEvento) ||
+                    (libro.getRuta() != null && libro.getRuta().contains(bibliotecaEvento));
+        }
+    }
+
+    private String extraerBibliotecaDeMensaje(String mensaje) {
+        // Buscar patrones de ID de biblioteca directamente
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("[A-E]-\\d{3}");
+        java.util.regex.Matcher matcher = pattern.matcher(mensaje);
+
+        if (matcher.find()) {
+            return matcher.group();
+        }
+
         return "Desconocida";
     }
 
@@ -172,7 +177,12 @@ public class PanelTraficoLibros2 extends JPanel implements EnvioListener {
     }
 
     private String generarClaveLibro(Libro libro) {
-        return libro.getIsbn() + "_" + libro.getIdBibliotecaOrigen() + "_" + libro.getIdBibliotecaDestino();
+        // Incluir más datos para asegurar unicidad
+        return libro.getIsbn() + "_" +
+                libro.getIdBibliotecaOrigen() + "_" +
+                libro.getIdBibliotecaDestino() + "_" +
+                libro.getPrioridad() + "_" +
+                System.identityHashCode(libro);
     }
 
     private String calcularEstado(Libro libro) {
